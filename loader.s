@@ -1,12 +1,16 @@
 global loader                  
 
-MAGIC_NUMBER equ 0x1BADB002    
-CHECKSUM     equ -MAGIC_NUMBER 
+FL_ALIGN equ 1 << 0
+MEMINFO equ 1 << 1
+FLAGS equ FL_ALIGN | MEMINFO
+MAGIC equ 0x1BADB002    
+CHECKSUM equ -(MAGIC + FLAGS)
 
 section .text:
 align 4
-  dd MAGIC_NUMBER
-  dd CHECKSUM  
+  dd MAGIC
+  dd FLAGS
+  dd CHECKSUM
 
 loader:     
   mov eax, 0xCAFEBABE
