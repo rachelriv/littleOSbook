@@ -69,7 +69,9 @@ void serial_configure_baud_rate(unsigned short com, unsigned short divisor)
 void serial_write(unsigned char *b, unsigned short len){
     int i = 0;
     while (!serial_is_transmit_fifo_empty(SERIAL_COM1_BASE));
-    while (i < len) {
-        outb(SERIAL_COM1_BASE, b[i++]); 
+    while (i < len){
+       if (serial_is_transmit_fifo_empty(SERIAL_COM1_BASE)) {
+          outb(SERIAL_COM1_BASE, b[i++]); 
+       }
     }
 }

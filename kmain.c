@@ -2,8 +2,8 @@
 #include "serial.h"
 int kmain(void)
 {
-        unsigned char sentence[] = "This is a test. Yippee!";
-	unsigned short sentence_length = 23;
+        unsigned char sentence[] = "Hello World";
+	unsigned short sentence_length = 11;
 	
 //	fb_clear_screen();
 //	fb_write(sentence,sentence_length);
