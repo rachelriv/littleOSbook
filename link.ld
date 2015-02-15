@@ -1,27 +1,18 @@
-ENTRY(loader)                           /* entry label */
+ENTRY(loader)
 
-SECTIONS
-{
-        . = 0x00100000;                 /* code should be loader at 1MB */
-
-        .text : ALIGN (0x1000)          /* align at 4KB */
-        {
-                *(.text)                /* all text sections from all files */
-        }
-
-        .rodata : ALIGN (0x1000)        /* align at 4KB */
-        {
-                *(.rodata*)             /* all read-only data sections from all files */
-        }
-
-        .data : ALIGN (0x1000)          /* align at 4KB */
-        {
-                *(.data)                /* all data sections from all files */
-        }
-
-        .bss : ALIGN (0x1000)           /* align at 4KB */
-        {
-                *(COMMON)               /* all COMMON sections from all files */
-                *(.bss)                 /* all bss sections from all files */
-        }
+SECTIONS {
+  . = 1M;
+  .text : ALIGN(4K) {
+    *(.text)
+  }
+  .rodata : ALIGN(4K) {
+    *(.rodata)
+  }
+  .data : ALIGN(4K) {
+    *(.data)
+  }
+  .bss : ALIGN(4K) {
+    *(COMMON)
+    *(.bss)
+  }
 }

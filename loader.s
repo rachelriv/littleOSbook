@@ -1,33 +1,62 @@
-global loader                 ; the entry symbol for ELF
+global loader
+
+MAGIC_NUMBER equ 0x1BADB002
+FL_ALIGN equ 1 << 0
+FL_MEMINFO equ 1 << 1
+FLAGS equ FL_ALIGN | FL_MEMINFO
+CHECKSUM equ -(MAGIC_NUMBER + FLAGS)
+KERNEL_STACK_SIZE equ 4096
+
 extern kmain
+global outb
+global inb
 
+section .text
+align 4
+  dd MAGIC_NUMBER
+  dd FLAGS
+  dd CHECKSUM
 
-ALI    equ 1 << 0           ; align loaded modules on page boundaries
-MEMINFO  equ 1 << 1           ; provide memory map
-FLAGS    equ ALI | MEMINFO  ; the multiboot flags field
-MAGIC    equ 0x1BADB002       ; define the magic number constant
-CHECKSUM equ -(MAGIC + FLAGS) ; calculate the checksum (magic number + flags + checksum should equal 0)
-KERNEL_STACK_SIZE equ 4096                  ; size of stack in bytes
+; A function which writes a byte to a port.
+outb:
+  mov al, [esp + 8]
+  mov dx, [esp + 4]
+  out dx, al
+  ret
+
+inb:
+  mov dx, [esp + 4]
+  in  al, dx
+  ret
+
+loader:
+  mov esp, kernel_stack + KERNEL_STACK_SIZE
+  ; This code will shift the cursor to the 50th character on the first line
+  mov dx, 0x3D4
+  mov ax, 14
+  out dx, ax
+  mov dx, 0x3D5
+  xor ax, ax
+  out dx, ax
+  mov dx, 0x3D4
+  mov ax, 15
+  out dx, ax
+  mov dx, 0x3D5
+  mov ax, 0x50
+  out dx, ax
+  ; Phew, assembly sucks.
+  push dword 3
+  push dword 2
+  push dword 1
+  mov word [0x000B8002], 0x2841
+
+  call kmain
+
+  ; And here a little infinite loop
+.loop:
+  jmp .loop
 
 section .bss
-align 4                                 ; align at 4 bytes
-kernel_stack:                           ; label points to beginning of memory
-    resb KERNEL_STACK_SIZE                  ; reserve stack for the kernel
-
-
-section .text:                ; start of the text (code) section
-align 4                       ; the code must be 4 byte aligned
-    dd MAGIC                  ; write the magic number to the machine code
-    dd FLAGS                     
-    dd CHECKSUM               ; and the checksum
-
-
-
-loader:                       ; the loader label (defined as entry point in linker script)
-    mov esp, kernel_stack + KERNEL_STACK_SIZE   ; point esp to the start of the
-                                                ; stack (end of memory area)
-
-    call kmain       ; call the function, the result will be in eax
-
-.loop:
-	jmp .loop
+align 4
+kernel_stack:
+  resb KERNEL_STACK_SIZE
