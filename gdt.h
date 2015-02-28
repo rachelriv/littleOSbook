@@ -17,12 +17,12 @@ struct gdt
 
 struct gdt_entry
 {
-	unsigned short	limit;
+	unsigned short	limit1;
+	unsigned char	limit2;
 	unsigned short	base1;
 	unsigned char	base2;
-	unsigned char	dpl;
-	unsigned char	limit2;
 	unsigned char	base3;
+	unsigned char	dpl;
 } __attribute__((packed));
 
 typedef unsigned short	gdt_selector;
