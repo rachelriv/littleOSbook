@@ -16,12 +16,14 @@ init_gdt(void)
 void
 load_gdt_entry(unsigned idx, unsigned char pl, unsigned char type)
 {
-	gdt_entries[idx].limit = (SEGMENT_LIMIT & 0xFFFF);
+	gdt_entries[idx].limit1 = (SEGMENT_LIMIT & 0xFFFF);
+        gdt_entries[idx].limit2 = 0;
+        
 	gdt_entries[idx].base1 = (SEGMENT_BASE & 0xFFFF);
 	gdt_entries[idx].base2 = (SEGMENT_BASE >> 16) & 0xFF;
+	gdt_entries[idx].base3 = (SEGMENT_BASE >> 24) & 0xFF;
+	
 	gdt_entries[idx].dpl =
 		(0x01 << 7) | ((pl & 0x03) << 5) | (0x01 << 4) |
 			(type & 0x0F);
-	gdt_entries[idx].limit2 = 0;
-	gdt_entries[idx].base3 = (SEGMENT_BASE >> 24) & 0xFF;
 }
