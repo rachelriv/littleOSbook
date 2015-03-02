@@ -15,3 +15,7 @@ void load_ivt_entries(unsigned idx, unsigned long offset, unsigned short seg_sel
     ivt_entries[idx].segmentselector = seg_selector & 0xFFFF;
     ivt_flags[idx].flags = flags;
 }
+
+void interrupt_handler(struct cpu_state cpu, struct stack_state stack, unsigned int interrupt){
+    
+}
