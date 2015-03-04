@@ -1,27 +1,12 @@
 #include "framebuffer.h"
-#include "io.h"
-#include "gdt.h"
+#include "string.h"
 
 void kmain() {
-
-  init_gdt();
-  serial_init();
-
-  // Set up the frame buffer structures.
-  fb_init();
-
-  // Get a nice clean screen.
-  clear_screen();
-
-  serial_write_text(SERIAL_COM1, "Booted.\n", 8);
-
+  fb_clear();
   int i;
-  // Cause lots of text to scroll around.
-  for (i = 0; i < 300; ++i) {
-    fb_write_text("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789", 62);
+  for (i = 0; i < 100; i++){
+    fb_write("abcdefghijklmnopqrstuvwxyz\n", 27);
   }
-
-  serial_write_text(SERIAL_COM1, "Shutting down.\n", 14);
-  // Bail back to the loader for no particular reason.
+  fb_write("\n", 1);
   return;
 }
