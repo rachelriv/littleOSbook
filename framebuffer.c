@@ -4,9 +4,16 @@
 #include "string.h"
 
 
-#define FRAMEBUFFER_ADDRESS 0x000B8000;
+#define FB_BASE_ADDRESS 0x000B8000
 #define FB_WIDTH 80
 #define FB_HEIGHT 25
+
+// A convenient define which gives a char ptr to the frame buffer
+#define FB_CHAR_PTR ((unsigned char *) FB_BASE_ADDRESS)
+
+// A define that gives us uint16 ptr to the frame buffer.
+// Cells are 2 bytes wide (16 bits) so this makes indexing more natural.
+#define FB_UINT16_PTR ((uint16_t *) FB_BASE_ADDRESS)
 
 static unsigned int fb_col = 0;
 static unsigned int fb_row = 0;
@@ -19,7 +26,7 @@ static unsigned int fb_row = 0;
  * i must be between 0 and 80*25 = 2000
  */
 void fb_write_cell(short i, char c, unsigned char fg, unsigned char bg) {
-  unsigned char *fb = (unsigned char*)FRAMEBUFFER_ADDRESS;
+  unsigned char *fb = FB_CHAR_PTR;
   fb[i*2] = c;
   fb[i*2 + 1] = ((bg & 0x0f) << 4) | (fg & 0x0f);
 }
@@ -93,8 +100,7 @@ void fb_clear_row(uint8_t row) {
 }
 
 void fb_scroll_down() {
-  // use 16-bits here because each cell is 16-bits wide
-  uint16_t *fb = (uint16_t*)FRAMEBUFFER_ADDRESS;
+  uint16_t *fb = FB_UINT16_PTR;
   memmove(fb, fb+FB_WIDTH, FB_WIDTH*2*(FB_HEIGHT*2-1));
   fb_clear_row(FB_HEIGHT-1);
 }
