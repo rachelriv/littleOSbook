@@ -1,4 +1,4 @@
-OBJECTS =  framebuffer.o kmain.o loader.o \
+OBJECTS =  serial.o framebuffer.o kmain.o loader.o \
 					io.o string.o
 CC = gcc
 CFLAGS = -m32 -fno-stack-protector \

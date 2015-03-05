@@ -1,15 +1,20 @@
-#ifndef INCLUDE_IO_H
-#define INCLUDE_IO_H
+#ifndef _IO_H_
+#define _IO_H_
 
-#define SERIAL_COM1 0x3F8
-
-// Defined in loader.s  Writes a byte to the given port number.
+/**
+ * outb:
+ * Sends the given data ot the given I/O port. Defined in io.s
+ *
+ * @param port The I/O port to send the data to
+ * @param data The data to send to the I/O port
+ */
 void outb(unsigned short port, unsigned char data);
 
-// Defined in loader.s  Reads a byte from the given port number.
-char inb(unsigned short port);
+/**
+ * inb:
+ * Read a bute from an I/O port
+ */
 
-void serial_init();
-void serial_write_text(unsigned short com, char *buffer, int length);
+unsigned char inb(unsigned short port);
 
-#endif // INCLUDE_IO_H
+#endif /* _IO_H_ */

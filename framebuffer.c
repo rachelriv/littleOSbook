@@ -2,7 +2,7 @@
 
 #include "framebuffer.h"
 #include "string.h"
-
+#include "io.h"
 
 #define FB_BASE_ADDRESS 0x000B8000
 #define FB_WIDTH 80
