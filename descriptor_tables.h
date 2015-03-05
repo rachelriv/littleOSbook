@@ -64,10 +64,10 @@ void init_descriptor_tables();
 
 struct idt_flags {
   uint8_t gate_type:3;  // 0 - 2, task, interrupt,
-  uint8_t d:1;          // 3, gate size
-  uint8_t reserved:5 = 01110; // 4, value=0
-  // uint8_t dpl:2;        // 5 - 6, descriptor privilege level
-  // uint8_t p:1;          // 7, segment present
+  uint8_t d:1;
+  uint8_t zero:1;
+  uint8_t dpl:2;        // 5 - 6, descriptor privilege level
+  uint8_t p:1;          // 7, segment present
 } __attribute__((packed));
 typedef struct idt_flags idt_flags_t;
 
