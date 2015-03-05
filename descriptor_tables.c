@@ -34,13 +34,7 @@ static void init_gdt() {
 
 
 /* Set the value of one GDT entry.
- * | 7 | 6 | 5 | 4 | 3 | 2 | 1 | 0 |
- * | P |  DPL  |DT |    Type       |
- * P - Segment is present? (1 = Yes)
- * DPL - Which Ring (0 to 3)
- * DT - Descriptor Type
- * Type - Which type?
- * NOTE: each GDT entry is 8 bytes
+ * Each entry is 64-bits wide (8 bytes)
 */
 static void gdt_set_gate(int32_t num, uint32_t base, uint32_t limit, uint8_t access, uint8_t gran){
     

@@ -1,4 +1,4 @@
-// (very loosely) based on code from: http://www.jamesmolloy.co.uk/tutorial_html/4.-The%20GDT%20and%20IDT.html
+// inspired by http://www.osdever.net/bkerndev/Docs/printing.htm
 
 #ifndef __DESCRIPTOR_TABLES_H__
 #define __DESCRIPTOR_TABLES_H__
