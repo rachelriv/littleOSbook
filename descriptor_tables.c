@@ -1,4 +1,4 @@
-// descriptor_tables.c - Initializes the GDT and IDT, and defines the 
+// descriptor_tables.c - Initializes the GDT and IDT, and defines the
 // default ISR and IRQ handler.
 // Based on code from Bran's kernel development tutorials.
 #include "descriptor_tables.h"
@@ -32,7 +32,7 @@ static void init_gdt() {
     gdt_ptr.limit = (sizeof(gdt_entry_t) * 5) - 1;
     gdt_ptr.base  = (uint32_t)&gdt_entries;
 
-    gdt_set_gate(0, 0, 0, 0, 0);                // Null segment 
+    gdt_set_gate(0, 0, 0, 0, 0);                // Null segment
     gdt_set_gate(1, 0, 0xFFFFFFFF, 0x9A, 0xCF); // Code segment
     gdt_set_gate(2, 0, 0xFFFFFFFF, 0x92, 0xCF); // Data segment
     gdt_set_gate(3, 0, 0xFFFFFFFF, 0xFA, 0xCF); // User mode code segment
@@ -46,7 +46,7 @@ static void init_gdt() {
  * Each entry is 64-bits wide (8 bytes)
 */
 static void gdt_set_gate(int32_t num, uint32_t base, uint32_t limit, uint8_t access, uint8_t gran){
-    
+
     gdt_entries[num].base_low    = (base & 0xFFFF);
     gdt_entries[num].base_middle = (base >> 16) & 0xFF;
     gdt_entries[num].base_high   = (base >> 24) & 0xFF;
@@ -67,11 +67,11 @@ static void init_idt() {
   idt_flags_t flags = {
     .p = 1,                 //idt segment present
     .dpl = 0,               //ring 0
-    .zero = 0, 
-    .d = 1,                 // these two 
-    .gate_type = 0x6        // combined are always 01110
+    // .zero = 0,
+    // .d = 1,                 // these two
+    // .gate_type = 0x6        // combined are always 01110
   };
-  
+
   idt_set_gate(0, isr0, 0x08, flags);
   idt_set_gate(1, isr1, 0x08, flags);
   idt_set_gate(2, isr2, 0x08, flags);

@@ -1,24 +1,50 @@
-// inspired by http://www.osdever.net/bkerndev/Docs/printing.htm
+// http://www.intel.com/content/www/us/en/architecture-and-technology/64-ia-32-architectures-software-developer-vol-3a-part-1-manual.html/
 
 #ifndef __DESCRIPTOR_TABLES_H__
 #define __DESCRIPTOR_TABLES_H__
 
 #include <inttypes.h>
 
-// This structure contains the value of one GDT entry.
-// We use the attribute 'packed' to tell GCC not to change
-// any of the alignment in the structure.
+
+// ---------------------------
+// Global Descriptor Tables
+// ---------------------------
+
+
+/** This structure contains the value of one GDT entry.
+ *  Each entry is 64 bits.
+ *  | 0 ... 15 | 16 ... 31 | 32 ... 39 | 40...47 | 48...55 | 56...63 |
+ *  |limit_low | base_low  |base_middle| access  | gran    |base_high|
+ *  limit_low: the lower 16 bits of the limit
+ *  base_low: the lower 16 bits of the base
+ *  base_middle: the next 8 bits of the base
+ *  access:
+ *       | 0 | 1..2 | 3 |   4..7   |
+ *       | P | DPL  | DT|   Type   |
+ *           P: segment present? (1=yes)
+ *           DPL: which ring (0 to 3)
+ *           DT: descriptor type
+ *           Type: Which type?
+ *  gran:
+ *       | 0 | 1 | 2 | 3 | 4..7    |
+ *       | G | D | 0 | A | Seg Len |
+ *           G: granularity (0 = 1byte, 1 = 4kbyte)
+ *           D: Operand Size (0 = 16bit, 1 = 32-bit)
+ *           0: Always 0
+ *           A: Available for System
+ *  More info: http://www.osdever.net/bkerndev/Docs/gdt.htm
+ */
 struct gdt_entry_struct {
-   uint16_t limit_low;           // The lower 16 bits of the limit.
-   uint16_t base_low;            // The lower 16 bits of the base.
-   uint8_t  base_middle;         // The next 8 bits of the base.
-   uint8_t  access;              // Access flags, (what ring). 8 bits
-   uint8_t  granularity;         // 8 bits
-   uint8_t  base_high;           // The last 8 bits of the base.
+   uint16_t limit_low;
+   uint16_t base_low;
+   uint8_t  base_middle;
+   uint8_t  access;
+   uint8_t  granularity;
+   uint8_t  base_high;
 } __attribute__((packed));
 typedef struct gdt_entry_struct gdt_entry_t;
 
-// To tell the processor where to find our GDT
+/* To tell the processor where to find our GDT */
 struct gdt_ptr {
   uint16_t limit;
   uint32_t base;
@@ -27,31 +53,46 @@ typedef struct gdt_ptr gdt_ptr_t;
 
 void init_descriptor_tables();
 
+
+
+
+
 // ---------------------------
 // Interrupt Descriptor Tables
 // ---------------------------
 
+
 struct idt_flags {
   uint8_t gate_type:3;  // 0 - 2, task, interrupt,
   uint8_t d:1;          // 3, gate size
-  uint8_t zero:1;       // 4, value=0
-  uint8_t dpl:2;        // 5 - 6, descriptor privilege level
-  uint8_t p:1;          // 7, segment present
+  uint8_t reserved:5 = 01110; // 4, value=0
+  // uint8_t dpl:2;        // 5 - 6, descriptor privilege level
+  // uint8_t p:1;          // 7, segment present
 } __attribute__((packed));
 typedef struct idt_flags idt_flags_t;
 
+/** This structure contains the value of one IDT entry. (similar to GDT entries)
+ *  Each entry is 64 bits.
+ *  | 0 ... 15 |  16 ... 31     | 32 ... 39 | 40...47 | 48 ... 63 |
+ *  | base_low |segment_selector| reserved  | flags   | base_high |
+ *  base_low: the lower 16 bits of the base
+ *  segment_selector: Segment Selector for destination code segment
+ *  reserved: always 0
+ *  flags: (defined above)
+ *  base_high: higher 16 bits of the base
+ */
 struct idt_entry {
-  uint16_t base_low; // aka offset
+  uint16_t base_low;
   uint16_t segment_selector;
-  uint8_t reserved; // always zero
+  uint8_t reserved;
   idt_flags_t flags;
-  uint16_t base_high; // aka offset
+  uint16_t base_high;
 } __attribute__((packed));
 typedef struct idt_entry idt_entry_t;
 
 struct idt_ptr {
   uint16_t limit;
-  idt_entry_t *base; // aka offset
+  idt_entry_t *base;
 } __attribute__((packed));
 typedef struct idt_ptr idt_ptr_t;
 

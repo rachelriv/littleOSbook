@@ -4,9 +4,7 @@
 #include "string.h"
 #include "io.h"
 
-#define FB_BASE_ADDRESS 0x000B8000
-#define FB_WIDTH 80
-#define FB_HEIGHT 25
+// For internal use only
 
 // A convenient define which gives a char ptr to the frame buffer
 #define FB_CHAR_PTR ((unsigned char *) FB_BASE_ADDRESS)
@@ -18,13 +16,6 @@
 static unsigned int fb_col = 0;
 static unsigned int fb_row = 0;
 
-/**
- * fb_write_cell:
- * Writes a character with the given foreground and background to position i
- * within the frame buffer.
- * fb and bg must be between 0 and 15
- * i must be between 0 and 80*25 = 2000
- */
 void fb_write_cell(short i, char c, unsigned char fg, unsigned char bg) {
   unsigned char *fb = FB_CHAR_PTR;
   fb[i*2] = c;
@@ -53,7 +44,7 @@ void fb_newline() {
 // advances cursor forward one character
 void fb_advance_pos() {
   if (fb_col < FB_WIDTH-1)
-    // have room to advance cursor in this row 
+    // have room to advance cursor in this row
     fb_col++;
   else
     // wrap around cursor to the start of the next line
@@ -103,10 +94,4 @@ void fb_scroll_down() {
   uint16_t *fb = FB_UINT16_PTR;
   memmove(fb, fb+FB_WIDTH, FB_WIDTH*2*(FB_HEIGHT*2-1));
   fb_clear_row(FB_HEIGHT-1);
-}
-
-void fb_wrap_vertical() {
-  fb_row = 0;
-  fb_clear_row(fb_row);
-  fb_move_cursor(0);
 }
