@@ -1,5 +1,5 @@
-OBJECTS =  serial.o framebuffer.o kmain.o loader.o \
-	   io.o string.o descriptor_tables.o gdt_flush.o\
+OBJECTS =  interrupt.o serial.o framebuffer.o kmain.o loader.o \
+	   io.o string.o descriptor_tables.o ldt.o isr.o\
                                          
 CC = gcc
 CFLAGS = -m32 -fno-stack-protector \

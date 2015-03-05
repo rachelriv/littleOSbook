@@ -1,17 +1,21 @@
+#include "serial.h"
 #include "framebuffer.h"
 #include "string.h"
-#include "serial.h"
+#include "multiboot.h"
 #include "descriptor_tables.h"
 
 void kmain() {
   init_descriptor_tables();
 
   fb_clear();
-  int i;
-  for (i = 0; i < 100; i++){
-    fb_write("abcdefghijklmnopqrstuvwxyz\n", 27);
-  }
-  fb_write("\n", 1);
-  serial_write("serial write", 12);
+  char greeting[] = "Hello World!\n";
+  fb_write_str(greeting);
+  serial_write(greeting, strlen(greeting));
+
+  char flags[100];
+  fb_write_str(flags);
+
+  asm volatile ("int $0x3");
+  asm volatile ("int $0x4");
   return;
 }
