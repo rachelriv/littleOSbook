@@ -67,8 +67,8 @@ static void init_idt() {
     .p = 1,                 //idt segment present
     .dpl = 0,               //ring 0
     .zero = 0, 
-    .d = 1,                 // these two 
-    .gate_type = 0x6        // combined are always 01110
+    //.d = 1,                 // these two 
+    .gate_type = 0xe        // combined are always 01110
   };
   idt_set_gate(0, isr0, 0x08, flags);
   idt_set_gate(1, isr1, 0x08, flags);

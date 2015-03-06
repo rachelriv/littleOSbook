@@ -63,8 +63,7 @@ void init_descriptor_tables();
 
 
 struct idt_flags {
-  uint8_t gate_type:3;  // 0 - 2, task, interrupt,
-  uint8_t d:1;
+  uint8_t gate_type:4;  // 0 - 2, task, interrupt,
   uint8_t zero:1;
   uint8_t dpl:2;        // 5 - 6, descriptor privilege level
   uint8_t p:1;          // 7, segment present
