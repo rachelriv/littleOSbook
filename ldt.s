@@ -14,7 +14,6 @@ gdt_flush:
   mov ss, ax
   jmp 0x08:.flush   ; 0x08 is the offset to our code segment: Far jump!
 .flush:
-  ; now we've changed cs to 0x08
   ret
 
 idt_flush:          

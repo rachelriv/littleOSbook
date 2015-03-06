@@ -1,9 +1,10 @@
+; from http://www.jamesmolloy.co.uk/tutorial_html/4.-The%20GDT%20and%20IDT.html
 extern isr_handler
 
 %macro ISR_NOERRCODE 1
 global isr%1
 isr%1:
-  cli                   ; clear interrupt-enable flag (disable interrupts)
+  cli                   ; disable interrupts
   push byte 0           ; push dummy error code
   push byte %1          ; push the interrupt number
   jmp isr_common_stub  ; go to common handler
