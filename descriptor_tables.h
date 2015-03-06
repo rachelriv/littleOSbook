@@ -69,9 +69,10 @@ void init_descriptor_tables();
  *  UNUSED: always 01110
  */
 struct idt_flags {
-  uint8_t p:1;
+  uint8_t unused:4;
+  uint8_t zero:1;
   uint8_t dpl:2;
-  uint8_t unused:5;
+  uint8_t p:1;
 } __attribute__((packed));
 typedef struct idt_flags idt_flags_t;
 
