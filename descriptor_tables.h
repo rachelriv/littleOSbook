@@ -5,7 +5,29 @@
 
 #include <inttypes.h>
 
+//Code- and Data-Segment Types
+//3.4.5.1 of http://www.intel.com/content/www/us/en/architecture-and-technology/64-ia-32-architectures-software-developer-vol-3a-part-1-manual.html/
+#define DATA_TYPE_READ_ONLY                       0x0
+#define DATA_TYPE_READ_ONLY_ACCESSED              0x1
+#define DATA_TYPE_READ_WRITE                      0x2
+#define DATA_TYPE_READ_WRITE_ACCESSED             0x3
+#define DATA_TYPE_READ_ONLY_EXPAND_DOWN           0x4
+#define DATA_TYPE_READ_ONLY_EXPAND_DOWN_ACCESSED  0x5
+#define DATA_TYPE_READ_WRITE_EXPAND_DOWN          0x6
+#define DATA_TYPE_READ_WRITE_EXPAND_DOWN_ACCESSED 0x7
 
+#define CODE_TYPE_EXEC_ONLY                       0x8
+#define CODE_TYPE_EXEC_ONLY_ACCESSED              0x9
+#define CODE_TYPE_EXEC_READ                       0xA
+#define CODE_TYPE_EXEC_READ_ACCESSED              0xB
+#define CODE_TYPE_EXEC_CONFORMING                 0xC
+#define CODE_TYPE_EXEC_CONFORMING_ACCESSED        0xD
+#define CODE_TYPE_EXEC_READ_CONFORMING            0xE
+#define CODE_TYPE_EXEC_READ_CONFORMING_ACCESSED   0xF
+
+
+//Reserved bits in IDT/GDT entries
+#define IDT_FLAG_RESERVED                         0x0E
 // ---------------------------
 // Global Descriptor Tables
 // ---------------------------
@@ -61,13 +83,17 @@ void init_descriptor_tables();
 // Interrupt Descriptor Tables
 // ---------------------------
 
-
+/** This structure contains the access flags of an IDT entry.
+ *  | 0 ... 4 | 5...6 | 7 |
+ *  |RESERVED |  DPL  | P |
+ *  P: segment is present (1 = Yes)
+ *  DPL: which ring (0 to 3)
+ *  RESERVED: always 01110 (14)
+ */
 struct idt_flags {
-  uint8_t gate_type:3;  // 0 - 2, task, interrupt,
-  uint8_t d:1;
-  uint8_t zero:1;
-  uint8_t dpl:2;        // 5 - 6, descriptor privilege level
-  uint8_t p:1;          // 7, segment present
+  uint8_t reserved:5;
+  uint8_t dpl:2;
+  uint8_t p:1;
 } __attribute__((packed));
 typedef struct idt_flags idt_flags_t;
 
