@@ -6,6 +6,29 @@
 #include <inttypes.h>
 
 
+//Code- and Data-Segment Types
+//3.4.5.1 of http://www.intel.com/content/www/us/en/architecture-and-technology/64-ia-32-architectures-software-developer-vol-3a-part-1-manual.html/
+#define DATA_TYPE_READ_ONLY                       0x0
+#define DATA_TYPE_READ_ONLY_ACCESSED              0x1
+#define DATA_TYPE_READ_WRITE                      0x2
+#define DATA_TYPE_READ_WRITE_ACCESSED             0x3
+#define DATA_TYPE_READ_ONLY_EXPAND_DOWN           0x4
+#define DATA_TYPE_READ_ONLY_EXPAND_DOWN_ACCESSED  0x5
+#define DATA_TYPE_READ_WRITE_EXPAND_DOWN          0x6
+#define DATA_TYPE_READ_WRITE_EXPAND_DOWN_ACCESSED 0x7
+
+#define CODE_TYPE_EXEC_ONLY                       0x8
+#define CODE_TYPE_EXEC_ONLY_ACCESSED              0x9
+#define CODE_TYPE_EXEC_READ                       0xA
+#define CODE_TYPE_EXEC_READ_ACCESSED              0xB
+#define CODE_TYPE_EXEC_CONFORMING                 0xC
+#define CODE_TYPE_EXEC_CONFORMING_ACCESSED        0xD
+#define CODE_TYPE_EXEC_READ_CONFORMING            0xE
+#define CODE_TYPE_EXEC_READ_CONFORMING_ACCESSED   0xF
+
+
+//Reserved bits in IDT/GDT entries
+
 // ---------------------------
 // Global Descriptor Tables
 // ---------------------------
@@ -35,19 +58,19 @@
  *  More info: http://www.osdever.net/bkerndev/Docs/gdt.htm
  */
 struct gdt_entry_struct {
-   uint16_t limit_low;
-   uint16_t base_low;
-   uint8_t  base_middle;
-   uint8_t  access;
-   uint8_t  granularity;
-   uint8_t  base_high;
+    uint16_t limit_low;
+    uint16_t base_low;
+    uint8_t  base_middle;
+    uint8_t  access;
+    uint8_t  granularity;
+    uint8_t  base_high;
 } __attribute__((packed));
 typedef struct gdt_entry_struct gdt_entry_t;
 
 /* To tell the processor where to find our GDT */
 struct gdt_ptr {
-  uint16_t limit;
-  uint32_t base;
+    uint16_t limit;
+    uint32_t base;
 } __attribute__((packed));
 typedef struct gdt_ptr gdt_ptr_t;
 
@@ -62,17 +85,18 @@ void init_descriptor_tables();
 // ---------------------------
 
 /** This structure contains the access flags of an IDT entry.
- *  | 0 | 1 | 2 ... 7 |
- *  | P |DPL|  UNUSED |
+ *  | 0 | 1 | 2 | 3 ... 7 |
+ *  | P |DPL| 0 |  UNUSED |
  *  P: segment is present (1 = Yes)
  *  DPL: which ring
- *  UNUSED: always 01110
+ *  0: always zero
+ *  UNUSED: always 1110 (14)
  */
 struct idt_flags {
-  uint8_t unused:4;
-  uint8_t zero:1;
-  uint8_t dpl:2;
-  uint8_t p:1;
+    uint8_t p:1;
+    uint8_t dpl:2;
+    uint8_t zero:1;
+    uint8_t reserved:4;
 } __attribute__((packed));
 typedef struct idt_flags idt_flags_t;
 
@@ -88,17 +112,17 @@ typedef struct idt_flags idt_flags_t;
  *  base_high: higher 16 bits of the base
  */
 struct idt_entry {
-  uint16_t base_low;
-  uint16_t segment_selector;
-  uint8_t reserved;
-  idt_flags_t flags;
-  uint16_t base_high;
+    uint16_t base_low;
+    uint16_t segment_selector;
+    uint8_t reserved;
+    idt_flags_t flags;
+    uint16_t base_high;
 } __attribute__((packed));
 typedef struct idt_entry idt_entry_t;
 
 struct idt_ptr {
-  uint16_t limit;
-  idt_entry_t *base;
+    uint16_t limit;
+    idt_entry_t *base;
 } __attribute__((packed));
 typedef struct idt_ptr idt_ptr_t;
 
