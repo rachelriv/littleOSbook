@@ -61,14 +61,20 @@ void init_descriptor_tables();
 // Interrupt Descriptor Tables
 // ---------------------------
 
-
+/** This structure contains the access flags of an IDT entry.
+ *  | 0 | 1 | 2 ... 7 |
+ *  | P |DPL|  UNUSED |
+ *  P: segment is present (1 = Yes)
+ *  DPL: which ring
+ *  UNUSED: always 01110
+ */
 struct idt_flags {
-  uint8_t gate_type:4;  // 0 - 2, task, interrupt,
-  uint8_t zero:1;
-  uint8_t dpl:2;        // 5 - 6, descriptor privilege level
-  uint8_t p:1;          // 7, segment present
+  uint8_t p:1;
+  uint8_t dpl:2;
+  uint8_t unused:5;
 } __attribute__((packed));
 typedef struct idt_flags idt_flags_t;
+
 
 /** This structure contains the value of one IDT entry. (similar to GDT entries)
  *  Each entry is 64 bits.
