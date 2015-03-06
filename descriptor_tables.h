@@ -32,6 +32,38 @@
 // Global Descriptor Tables
 // ---------------------------
 
+/**  access:
+ *       | 0...3 | 4 | 5... 6 | 7 |
+ *       |  Type | DT|   DPL  | P |
+ *           Type: Which type?
+ *           DT: descriptor type
+ *           DPL: which ring (0 to 3)
+ *           P: segment present? (1=yes)
+ */
+struct gdt_access {
+    uint8_t type:4;           
+    uint8_t dt:1;
+    uint8_t dpl:2;
+    uint8_t p:1;
+} __attribute__((packed));
+typedef struct gdt_access gdt_access_t;
+/*
+ *       | 0..3    | 4 | 5 | 6 | 7 | 
+ *       | SEGLEN  | A | 0 | D | G | 
+ *           SEGLEN: segment length
+ *           A: Available for System
+ *           0: Always 0
+ *           D: Operand Size (0 = 16bit, 1 = 32-bit)
+ *           G: granularity (0 = 1byte, 1 = 4kbyte)
+*/
+struct gdt_granularity {
+    uint8_t seglen:4;
+    uint8_t a:1;
+    uint8_t zero:1;
+    uint8_t d:1;
+    uint8_t g:1;
+} __attribute__((packed));
+typedef struct gdt_granularity gdt_gran_t;
 
 /** This structure contains the value of one GDT entry.
  *  Each entry is 64 bits.
@@ -40,28 +72,15 @@
  *  limit_low: the lower 16 bits of the limit
  *  base_low: the lower 16 bits of the base
  *  base_middle: the next 8 bits of the base
- *  access:
- *       | 0 | 1..2 | 3 |   4..7   |
- *       | P | DPL  | DT|   Type   |
- *           P: segment present? (1=yes)
- *           DPL: which ring (0 to 3)
- *           DT: descriptor type
- *           Type: Which type?
- *  gran:
- *       | 0 | 1 | 2 | 3 | 4..7    |
- *       | G | D | 0 | A | Seg Len |
- *           G: granularity (0 = 1byte, 1 = 4kbyte)
- *           D: Operand Size (0 = 16bit, 1 = 32-bit)
- *           0: Always 0
- *           A: Available for System
- *  More info: http://www.osdever.net/bkerndev/Docs/gdt.htm
+ *  access: (see above)
+ *  gran:  (see above)
  */
 struct gdt_entry_struct {
    uint16_t limit_low;
    uint16_t base_low;
    uint8_t  base_middle;
-   uint8_t  access;
-   uint8_t  granularity;
+   gdt_access_t  access;
+   gdt_gran_t  granularity;
    uint8_t  base_high;
 } __attribute__((packed));
 typedef struct gdt_entry_struct gdt_entry_t;

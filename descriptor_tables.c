@@ -9,7 +9,7 @@ extern void idt_flush(idt_ptr_t*);
 
 static void init_gdt();
 static void init_idt();
-static void gdt_set_gate(int32_t, uint32_t, uint32_t, uint8_t, uint8_t);
+static void gdt_set_gate(int32_t idx, uint32_t base, uint32_t limit, gdt_access_t access, gdt_gran_t gran);
 static void idt_set_gate(
   uint8_t idx,
   void(*base),
@@ -32,11 +32,94 @@ static void init_gdt() {
     gdt_ptr.limit = (sizeof(gdt_entry_t) * 5) - 1;
     gdt_ptr.base  = (uint32_t)&gdt_entries;
 
-    gdt_set_gate(0, 0, 0, 0, 0);                // Null segment
-    gdt_set_gate(1, 0, 0xFFFFFFFF, 0x9A, 0xCF); // Code segment
-    gdt_set_gate(2, 0, 0xFFFFFFFF, 0x92, 0xCF); // Data segment
-    gdt_set_gate(3, 0, 0xFFFFFFFF, 0xFA, 0xCF); // User mode code segment
-    gdt_set_gate(4, 0, 0xFFFFFFFF, 0xF2, 0xCF); // User mode data segment
+    gdt_set_gate(
+        0,
+        0,
+        0,
+        (struct gdt_access){
+          .p = 0,
+          .dpl = 0x0,
+          .dt = 0,
+          .type = 0
+        },
+        (struct gdt_granularity){
+          .g = 1,
+          .d = 1,
+          .zero = 0,
+          .a = 0,
+          .seglen = 0xf
+        });        // Null segment
+    gdt_set_gate(
+        1,
+        0, 
+        0xFFFFFFFF, 
+        (struct gdt_access){
+            .p = 1,
+            .dpl = 0x0,
+            .dt = 1,
+            .type = 0xa
+        },
+        (struct gdt_granularity){
+          .g = 1,
+          .d = 1,
+          .zero = 0,
+          .a = 0,
+          .seglen = 0xf
+        });        // Null segment
+
+    gdt_set_gate(
+        2, 
+        0, 
+        0xFFFFFFFF, 
+        (struct gdt_access){
+            .p = 1,
+            .dpl = 0x0,
+            .dt = 1,
+            .type = 0x2
+        },
+        (struct gdt_granularity){
+          .g = 1,
+          .d = 1,
+          .zero = 0,
+          .a = 0,
+          .seglen = 0xf
+        });        // Null segment
+ 
+    gdt_set_gate(
+        3, 
+        0, 
+        0xFFFFFFFF, 
+        (struct gdt_access){
+            .p = 1,
+            .dpl = 0xf,
+            .dt = 1,
+            .type = 0xa
+        },
+        (struct gdt_granularity){
+          .g = 1,
+          .d = 1,
+          .zero = 0,
+          .a = 0,
+          .seglen = 0xf
+        });        // Null segment
+    
+gdt_set_gate(
+        4, 
+        0, 
+        0xFFFFFFFF, 
+        (struct gdt_access){
+            .p = 1,
+            .dpl = 0xf,
+            .dt = 1,
+            .type = 0x2
+        },
+        (struct gdt_granularity){
+          .g = 1,
+          .d = 1,
+          .zero = 0,
+          .a = 0,
+          .seglen = 0xf
+        });        // Null segment
 
     gdt_flush((uint32_t)&gdt_ptr);
 }
@@ -45,16 +128,16 @@ static void init_gdt() {
 /* Set the value of one GDT entry.
  * Each entry is 64-bits wide (8 bytes)
 */
-static void gdt_set_gate(int32_t num, uint32_t base, uint32_t limit, uint8_t access, uint8_t gran){
+static void gdt_set_gate(int32_t num, uint32_t base, uint32_t limit, gdt_access_t access, gdt_gran_t gran){
 
     gdt_entries[num].base_low    = (base & 0xFFFF);
     gdt_entries[num].base_middle = (base >> 16) & 0xFF;
     gdt_entries[num].base_high   = (base >> 24) & 0xFF;
 
     gdt_entries[num].limit_low   = (limit & 0xFFFF);
-    gdt_entries[num].granularity = (limit >> 16) & 0x0F;
+//    gdt_entries[num].granularity = (limit >> 16) & 0x0F;
 
-    gdt_entries[num].granularity |= gran & 0xF0;
+    gdt_entries[num].granularity = gran;
     gdt_entries[num].access      = access;
 }
 
