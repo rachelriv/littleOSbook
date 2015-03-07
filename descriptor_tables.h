@@ -5,8 +5,29 @@
 
 #include <inttypes.h>
 
-//Code- and Data-Segment Types
-//3.4.5.1 of http://www.intel.com/content/www/us/en/architecture-and-technology/64-ia-32-architectures-software-developer-vol-3a-part-1-manual.html/
+
+//Reserved bits in IDT/GDT entries
+#define IDT_FLAG_RESERVED                         0x0E
+
+
+//GDT fields
+#define BASE                                      0x00000000
+#define LIMIT                                     0xFFFFFFFF
+
+    //GDT granularity fields 
+    #define 1BYTE_GRANULARITY                     0
+    #define 4KBYTE_GRANULARITY                    1
+
+    #define 16BIT_OPERAND_SIZE                    0
+    #define 32BIT_OPERAND_SIZE                    1
+
+    #define SEGMENT_LENGTH                        0xF
+
+    //GDT access fields
+#define SEGMENT_NOT_PRESENT                       0
+#define SEGMENT_PRESENT                           1
+
+        //3.4.5.1 of Intel 64 and IA-32 Architectures Developer's Manual
 #define DATA_TYPE_READ_ONLY                       0x0
 #define DATA_TYPE_READ_ONLY_ACCESSED              0x1
 #define DATA_TYPE_READ_WRITE                      0x2
@@ -26,8 +47,6 @@
 #define CODE_TYPE_EXEC_READ_CONFORMING_ACCESSED   0xF
 
 
-//Reserved bits in IDT/GDT entries
-#define IDT_FLAG_RESERVED                         0x0E
 // ---------------------------
 // Global Descriptor Tables
 // ---------------------------
@@ -49,17 +68,15 @@ struct gdt_access {
 typedef struct gdt_access gdt_access_t;
 /*
  *       | 0..3    | 4 | 5 | 6 | 7 | 
- *       | SEGLEN  | A | 0 | D | G | 
+ *       | SEGLEN  |   0   | D | G | 
  *           SEGLEN: segment length
- *           A: Available for System
  *           0: Always 0
  *           D: Operand Size (0 = 16bit, 1 = 32-bit)
  *           G: granularity (0 = 1byte, 1 = 4kbyte)
 */
 struct gdt_granularity {
     uint8_t seglen:4;
-    uint8_t a:1;
-    uint8_t zero:1;
+    uint8_t zero:2;
     uint8_t d:1;
     uint8_t g:1;
 } __attribute__((packed));

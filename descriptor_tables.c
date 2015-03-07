@@ -6,7 +6,7 @@
 // Internal use only
 extern void gdt_flush(uint32_t);
 extern void idt_flush(idt_ptr_t*);
-
+static gdt_entry_t construct_entry();
 static void init_gdt();
 static void init_idt();
 static void gdt_set_gate(int32_t idx, uint32_t base, uint32_t limit, gdt_access_t access, gdt_gran_t gran);
@@ -31,24 +31,13 @@ void init_descriptor_tables(){
 static void init_gdt() {
     gdt_ptr.limit = (sizeof(gdt_entry_t) * 5) - 1;
     gdt_ptr.base  = (uint32_t)&gdt_entries;
-
-    gdt_set_gate(
-        0,
-        0,
-        0,
-        (struct gdt_access){
-          .p = 0,
-          .dpl = 0x0,
-          .dt = 0,
-          .type = 0
-        },
-        (struct gdt_granularity){
-          .g = 1,
-          .d = 1,
-          .zero = 0,
-          .a = 0,
-          .seglen = 0xf
-        });        // Null segment
+    
+   // gdt_entry_t null_segment = construct_entry();
+   // gdt_entries[0] = null_segment;
+    gdt_entry_t kernel_mode_code_segment = construct_entry(
+    	(struct gdt_access){
+    		.p 
+    )
     gdt_set_gate(
         1,
         0, 
@@ -141,6 +130,26 @@ static void gdt_set_gate(int32_t num, uint32_t base, uint32_t limit, gdt_access_
     gdt_entries[num].access      = access;
 }
 
+/* The only thing that changes between the non-null GDT
+ * segment descriptors is the access. Given the access,
+ * this returns a GDT entry.
+ */
+static gdt_entry_t construct_entry(gdt_access_t access) {
+    gdt_entry_t entry = (struct gdt_entry_struct){
+        .base_low  = GDT_BASE & 0xFFFF,
+	.base_middle = (GDT_BASE >> 16) & 0xFF,
+        .base_high = (GDT_BASE >> 24) & 0xFF,
+	.limit_low = (GDT_LIMIT & 0xFFFF),
+        .access = access,
+        .granularity = (struct gdt_granularity){
+          .g = GDT_4KBYTE_GRANULARITY,
+          .d = GDT_32BIT_OPERAND_SIZE,
+          .zero = 0,
+          .seglen = GDT_SEGMENT_LENGTH
+        }
+    };
+    return entry;
+}
 static void init_idt() {
   idt_ptr.limit = sizeof(idt_entry_t) * 256 - 1;
   idt_ptr.base = idt_entries;
