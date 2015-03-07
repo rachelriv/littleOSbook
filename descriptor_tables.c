@@ -17,6 +17,10 @@ static void gdt_set_entry(
     gdt_access_t access,
     gdt_gran_t gran);
 
+static void gdt_set_entry2(
+    int32_t idx,
+    gdt_entry_struct entry);
+
 static void idt_set_entry(
     uint8_t idx,
     void(*base),
@@ -36,27 +40,57 @@ void init_descriptor_tables(){
     init_idt();
 }
 
-static void init_gdt() {
-    gdt_ptr.limit = (sizeof(gdt_entry_t) * 5) - 1;
-    gdt_ptr.base  = (uint32_t)&gdt_entries;
 
-    gdt_set_entry(
-        0,
-        0,
-        0,
-        (struct gdt_access){
-          .p = 0,
-          .dpl = 0x0,
-          .dt = 0,
-          .type = 0
-        },
-        (struct gdt_granularity){
+static struct  gdt_entry_struct construct_gdt_entry(){
+    struct gdt_entry_struct entry = (struct gdt_entry_struct){
+    // }
+    .base_low    = 0;
+    .base_middle = 0;
+    .base_high   = 0;
+
+    .limit_low   = 0;
+
+    .granularity = (struct gdt_granularity){
           .g = 1,
           .d = 1,
           .zero = 0,
           .a = 0,
           .seglen = 0xf
-        });        // Null segment
+        };
+    .access      = (struct gdt_access){
+          .p = 0,
+          .dpl = 0x0,
+          .dt = 0,
+          .type = 0
+        };
+    };
+    return entry;
+}
+
+static void init_gdt() {
+    gdt_ptr.limit = (sizeof(gdt_entry_t) * 5) - 1;
+    gdt_ptr.base  = (uint32_t)&gdt_entries;
+
+    gdt_entry_t entry = construct_gdt_entry();
+    gdt_set_entry2(0, entry);
+
+    // gdt_set_entry(
+    //     0,
+    //     0,
+    //     0,
+    //     (struct gdt_access){
+    //       .p = 0,
+    //       .dpl = 0x0,
+    //       .dt = 0,
+    //       .type = 0
+    //     },
+    //     (struct gdt_granularity){
+    //       .g = 1,
+    //       .d = 1,
+    //       .zero = 0,
+    //       .a = 0,
+    //       .seglen = 0xf
+    //     });
     gdt_set_entry(
         1,
         0,
@@ -134,9 +168,9 @@ gdt_set_entry(
 
 /* Construct a GDT entry. */
 static void gdt_set_entry(uint32_t base, uint32_t limit, gdt_access_t access, gdt_gran_t gran){
-    (struct gdt_entry_struct){
-        limit_low = (limit & 0xFFFF);
-    }
+    // (struct gdt_entry_struct){
+    //     limit_low = (limit & 0xFFFF);
+    // }
     gdt_entries[num].base_low    = (base & 0xFFFF);
     gdt_entries[num].base_middle = (base >> 16) & 0xFF;
     gdt_entries[num].base_high   = (base >> 24) & 0xFF;
@@ -163,7 +197,12 @@ static void gdt_set_entry(int32_t num, uint32_t base, uint32_t limit, gdt_access
     gdt_entries[num].granularity = gran;
     gdt_entries[num].access      = access;
 }
-
+/* Set the value of one GDT entry.
+ * Each entry is 64-bits wide (8 bytes)
+ */
+static void gdt_set_entry2(int32_t num, gdt_entry_struct entry){
+    gdt_entries[num].base_low    = entry;
+}
 static void init_idt() {
     idt_ptr.limit = sizeof(idt_entry_t) * 256 - 1;
     idt_ptr.base = idt_entries;
