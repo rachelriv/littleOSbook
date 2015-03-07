@@ -21,8 +21,8 @@
 #define GDT_OPERAND_SIZE_16                           0
 #define GDT_OPERAND_SIZE_32                           1
   // G field (grandularity)
-#define GDT_ONEK_BYTE_GRANULARITY                     0
-#define GDT_FOURK_BYTE_GRANULARITY                    1
+#define GDT_GRANULARITY_1K                            0
+#define GDT_GRANULARITY_4K                            1
 
 //GDT access
   // TYPE field (type)

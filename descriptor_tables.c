@@ -6,15 +6,21 @@
 // Internal use only
 extern void gdt_flush(uint32_t);
 extern void idt_flush(idt_ptr_t*);
+static gdt_entry_t construct_null_entry();
 static gdt_entry_t construct_entry();
 static void init_gdt();
 static void init_idt();
-static void gdt_set_gate(int32_t idx, uint32_t base, uint32_t limit, gdt_access_t access, gdt_gran_t gran);
+static void gdt_set_gate(
+    int32_t idx,
+    uint32_t base,
+    uint32_t limit,
+    gdt_access_t access,
+    gdt_gran_t gran);
 static void idt_set_gate(
-  uint8_t idx,
-  void(*base),
-  uint16_t selector,
-  idt_flags_t flags);
+    uint8_t idx,
+    void(*base),
+    uint16_t selector,
+    idt_flags_t flags);
 
 gdt_entry_t gdt_entries[5];
 gdt_ptr_t   gdt_ptr;
@@ -88,8 +94,8 @@ static gdt_entry_t construct_entry(gdt_access_t access) {
         .limit_low = (GDT_LIMIT & 0xFFFF),
         .access = access,
         .granularity = (struct gdt_granularity){
-            .g = GDT_4KBYTE_GRANULARITY,
-            .d = GDT_32BIT_OPERAND_SIZE,
+            .g = GDT_GRANULARITY_4K,
+            .d = GDT_OPERAND_SIZE_32,
             .zero = 0,
             .seglen = GDT_SEGMENT_LENGTH
         }
@@ -100,22 +106,7 @@ static gdt_entry_t construct_entry(gdt_access_t access) {
 /* Constructs a null GDT entry. */
 static gdt_entry_t construct_null_entry() {
     gdt_entry_t null_entry = (struct gdt_entry_struct){
-        .base_low = 0,
-        .base_middle = 0,
-        .base_high = 0,
-        .limit_low = 0,
-        .access = (struct gdt_access){
-            .p = 0,
-            .dpl = 0,
-            .dt = 0,
-            .type = 0
-        },
-        .granularity = (struct gdt_granularity){
-            .g = 0,
-            .d = 0,
-            .zero = 0,
-            .seglen = 0
-        }
+        0, 0, 0, 0,{0, 0, 0, 0},{0,0,0,0}
     };
     return null_entry;
 }
