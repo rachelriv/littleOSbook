@@ -7,72 +7,82 @@
 
 
 //Reserved bits in IDT/GDT entries
-#define IDT_FLAG_RESERVED                         0x0E
+#define IDT_FLAG_RESERVED                             0x0E
 
 
-//GDT fields
-#define BASE                                      0x00000000
-#define LIMIT                                     0xFFFFFFFF
+//GDT FIELDS
+#define GDT_BASE                                      0x00000000
+#define GDT_LIMIT                                     0xFFFFFFFF
 
-    //GDT granularity fields 
-    #define 1BYTE_GRANULARITY                     0
-    #define 4KBYTE_GRANULARITY                    1
+//GDT granularity
+  // SEGLEN field (segment length)
+#define GDT_SEGMENT_LENGTH                            0xF
+  // D field (operand size)
+#define GDT_OPERAND_SIZE_16                           0
+#define GDT_OPERAND_SIZE_32                           1
+  // G field (grandularity)
+#define GDT_ONEK_BYTE_GRANULARITY                     0
+#define GDT_FOURK_BYTE_GRANULARITY                    1
 
-    #define 16BIT_OPERAND_SIZE                    0
-    #define 32BIT_OPERAND_SIZE                    1
-
-    #define SEGMENT_LENGTH                        0xF
-
-    //GDT access fields
-#define SEGMENT_NOT_PRESENT                       0
-#define SEGMENT_PRESENT                           1
-
-        //3.4.5.1 of Intel 64 and IA-32 Architectures Developer's Manual
-#define DATA_TYPE_READ_ONLY                       0x0
-#define DATA_TYPE_READ_ONLY_ACCESSED              0x1
-#define DATA_TYPE_READ_WRITE                      0x2
-#define DATA_TYPE_READ_WRITE_ACCESSED             0x3
-#define DATA_TYPE_READ_ONLY_EXPAND_DOWN           0x4
-#define DATA_TYPE_READ_ONLY_EXPAND_DOWN_ACCESSED  0x5
-#define DATA_TYPE_READ_WRITE_EXPAND_DOWN          0x6
-#define DATA_TYPE_READ_WRITE_EXPAND_DOWN_ACCESSED 0x7
-
-#define CODE_TYPE_EXEC_ONLY                       0x8
-#define CODE_TYPE_EXEC_ONLY_ACCESSED              0x9
-#define CODE_TYPE_EXEC_READ                       0xA
-#define CODE_TYPE_EXEC_READ_ACCESSED              0xB
-#define CODE_TYPE_EXEC_CONFORMING                 0xC
-#define CODE_TYPE_EXEC_CONFORMING_ACCESSED        0xD
-#define CODE_TYPE_EXEC_READ_CONFORMING            0xE
-#define CODE_TYPE_EXEC_READ_CONFORMING_ACCESSED   0xF
+//GDT access
+  // TYPE field (type)
+  // (3.4.5.1 of Intel 64 and IA-32 Architectures Developer's Manual)
+#define GDT_DATA_TYPE_READ_ONLY                       0x0
+#define GDT_DATA_TYPE_READ_ONLY_ACCESSED              0x1
+#define GDT_DATA_TYPE_READ_WRITE                      0x2
+#define GDT_DATA_TYPE_READ_WRITE_ACCESSED             0x3
+#define GDT_DATA_TYPE_READ_ONLY_EXPAND_DOWN           0x4
+#define GDT_DATA_TYPE_READ_ONLY_EXPAND_DOWN_ACCESSED  0x5
+#define GDT_DATA_TYPE_READ_WRITE_EXPAND_DOWN          0x6
+#define GDT_DATA_TYPE_READ_WRITE_EXPAND_DOWN_ACCESSED 0x7
+#define GDT_CODE_TYPE_EXEC_ONLY                       0x8
+#define GDT_CODE_TYPE_EXEC_ONLY_ACCESSED              0x9
+#define GDT_CODE_TYPE_EXEC_READ                       0xA
+#define GDT_CODE_TYPE_EXEC_READ_ACCESSED              0xB
+#define GDT_CODE_TYPE_EXEC_CONFORMING                 0xC
+#define GDT_CODE_TYPE_EXEC_CONFORMING_ACCESSED        0xD
+#define GDT_CODE_TYPE_EXEC_READ_CONFORMING            0xE
+#define GDT_CODE_TYPE_EXEC_READ_CONFORMING_ACCESSED   0xF
+  // DT field (descriptor type)
+#define GDT_SYSTEM_DESCRIPTOR                         0
+#define GDT_CODE_AND_DATA_DESCRIPTOR                  1
+  // DPL field (which ring)
+#define GDT_RING0                                     0
+#define GDT_RING1                                     1
+#define GDT_RING2                                     2
+#define GDT_RING3                                     3
+  // P field (present)
+#define GDT_SEGMENT_NOT_PRESENT                       0
+#define GDT_SEGMENT_PRESENT                           1
 
 
 // ---------------------------
 // Global Descriptor Tables
 // ---------------------------
 
-/**  access:
- *       | 0...3 | 4 | 5... 6 | 7 |
- *       |  Type | DT|   DPL  | P |
- *           Type: Which type?
- *           DT: descriptor type
- *           DPL: which ring (0 to 3)
- *           P: segment present? (1=yes)
+/**  Access portion of GDT entry.
+ *   | 0...3 | 4 | 5... 6 | 7 |
+ *   |  Type | DT|   DPL  | P |
+ *       Type: Which type?
+ *       DT: descriptor type
+ *       DPL: which ring (0 to 3)
+ *       P: segment present? (1=yes)
  */
 struct gdt_access {
-    uint8_t type:4;           
+    uint8_t type:4;
     uint8_t dt:1;
     uint8_t dpl:2;
     uint8_t p:1;
 } __attribute__((packed));
 typedef struct gdt_access gdt_access_t;
-/*
- *       | 0..3    | 4 | 5 | 6 | 7 | 
- *       | SEGLEN  |   0   | D | G | 
- *           SEGLEN: segment length
- *           0: Always 0
- *           D: Operand Size (0 = 16bit, 1 = 32-bit)
- *           G: granularity (0 = 1byte, 1 = 4kbyte)
+
+/** Granularity portion of GDT entry.
+ *   | 0..3    | 4 | 5 | 6 | 7 |
+ *   | SEGLEN  |   0   | D | G |
+ *       SEGLEN: segment length
+ *       0: Always 0
+ *       D: Operand Size (0 = 16bit, 1 = 32-bit)
+ *       G: granularity (0 = 1byte, 1 = 4kbyte)
 */
 struct gdt_granularity {
     uint8_t seglen:4;

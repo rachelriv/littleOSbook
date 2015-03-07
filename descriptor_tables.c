@@ -1,8 +1,8 @@
-// descriptor_tables.c - Initializes the GDT and IDT, and defines the
-// default ISR and IRQ handler.
-// Based on code from Bran's kernel development tutorials.
+// Based (loosely) on code from Bran's kernel development tutorials.
+
 #include "descriptor_tables.h"
 #include "string.h"
+
 // Internal use only
 extern void gdt_flush(uint32_t);
 extern void idt_flush(idt_ptr_t*);
@@ -15,6 +15,7 @@ static void idt_set_gate(
   void(*base),
   uint16_t selector,
   idt_flags_t flags);
+
 gdt_entry_t gdt_entries[5];
 gdt_ptr_t   gdt_ptr;
 
@@ -31,125 +32,94 @@ void init_descriptor_tables(){
 static void init_gdt() {
     gdt_ptr.limit = (sizeof(gdt_entry_t) * 5) - 1;
     gdt_ptr.base  = (uint32_t)&gdt_entries;
-    
-   // gdt_entry_t null_segment = construct_entry();
-   // gdt_entries[0] = null_segment;
-    gdt_entry_t kernel_mode_code_segment = construct_entry(
-    	(struct gdt_access){
-    		.p 
-    )
-    gdt_set_gate(
-        1,
-        0, 
-        0xFFFFFFFF, 
-        (struct gdt_access){
-            .p = 1,
-            .dpl = 0x0,
-            .dt = 1,
-            .type = 0xa
-        },
-        (struct gdt_granularity){
-          .g = 1,
-          .d = 1,
-          .zero = 0,
-          .a = 0,
-          .seglen = 0xf
-        });        // Null segment
 
-    gdt_set_gate(
-        2, 
-        0, 
-        0xFFFFFFFF, 
+    gdt_entry_t null_segment = construct_null_entry();
+    gdt_entry_t kernel_mode_code_segment = construct_entry(
         (struct gdt_access){
-            .p = 1,
-            .dpl = 0x0,
-            .dt = 1,
-            .type = 0x2
-        },
-        (struct gdt_granularity){
-          .g = 1,
-          .d = 1,
-          .zero = 0,
-          .a = 0,
-          .seglen = 0xf
-        });        // Null segment
- 
-    gdt_set_gate(
-        3, 
-        0, 
-        0xFFFFFFFF, 
+            .p    = GDT_SEGMENT_PRESENT,
+            .dpl  = GDT_RING0,
+            .dt   = GDT_CODE_AND_DATA_DESCRIPTOR,
+            .type = GDT_CODE_TYPE_EXEC_READ
+        }
+    );
+    gdt_entry_t kernel_mode_data_segment = construct_entry(
         (struct gdt_access){
-            .p = 1,
-            .dpl = 0xf,
-            .dt = 1,
-            .type = 0xa
-        },
-        (struct gdt_granularity){
-          .g = 1,
-          .d = 1,
-          .zero = 0,
-          .a = 0,
-          .seglen = 0xf
-        });        // Null segment
-    
-gdt_set_gate(
-        4, 
-        0, 
-        0xFFFFFFFF, 
+            .p    = GDT_SEGMENT_PRESENT,
+            .dpl  = GDT_RING0,
+            .dt   = GDT_CODE_AND_DATA_DESCRIPTOR,
+            .type = GDT_DATA_TYPE_READ_WRITE
+        }
+    );
+    gdt_entry_t user_mode_code_segment = construct_entry(
         (struct gdt_access){
-            .p = 1,
-            .dpl = 0xf,
-            .dt = 1,
-            .type = 0x2
-        },
-        (struct gdt_granularity){
-          .g = 1,
-          .d = 1,
-          .zero = 0,
-          .a = 0,
-          .seglen = 0xf
-        });        // Null segment
+            .p    = GDT_SEGMENT_PRESENT,
+            .dpl  = GDT_RING3,
+            .dt   = GDT_CODE_AND_DATA_DESCRIPTOR,
+            .type = GDT_CODE_TYPE_EXEC_READ
+        }
+    );
+    gdt_entry_t user_mode_data_segment = construct_entry(
+        (struct gdt_access){
+            .p    = GDT_SEGMENT_PRESENT,
+            .dpl  = GDT_RING3,
+            .dt   = GDT_CODE_AND_DATA_DESCRIPTOR,
+            .type = GDT_DATA_TYPE_READ_WRITE
+        }
+    );
+
+    gdt_entries[0] = null_segment;
+    gdt_entries[1] = kernel_mode_code_segment;
+    gdt_entries[2] = kernel_mode_data_segment;
+    gdt_entries[3] = user_mode_code_segment;
+    gdt_entries[4] = user_mode_data_segment;
 
     gdt_flush((uint32_t)&gdt_ptr);
 }
 
-
-/* Set the value of one GDT entry.
- * Each entry is 64-bits wide (8 bytes)
-*/
-static void gdt_set_gate(int32_t num, uint32_t base, uint32_t limit, gdt_access_t access, gdt_gran_t gran){
-
-    gdt_entries[num].base_low    = (base & 0xFFFF);
-    gdt_entries[num].base_middle = (base >> 16) & 0xFF;
-    gdt_entries[num].base_high   = (base >> 24) & 0xFF;
-
-    gdt_entries[num].limit_low   = (limit & 0xFFFF);
-//    gdt_entries[num].granularity = (limit >> 16) & 0x0F;
-
-    gdt_entries[num].granularity = gran;
-    gdt_entries[num].access      = access;
-}
-
-/* The only thing that changes between the non-null GDT
- * segment descriptors is the access. Given the access,
- * this returns a GDT entry.
+/** The only thing that changes between the non-null GDT
+ *  segment descriptors is the access. Given the access,
+ *  this returns the corresponding GDT entry.
  */
 static gdt_entry_t construct_entry(gdt_access_t access) {
     gdt_entry_t entry = (struct gdt_entry_struct){
         .base_low  = GDT_BASE & 0xFFFF,
-	.base_middle = (GDT_BASE >> 16) & 0xFF,
+        .base_middle = (GDT_BASE >> 16) & 0xFF,
         .base_high = (GDT_BASE >> 24) & 0xFF,
-	.limit_low = (GDT_LIMIT & 0xFFFF),
+        .limit_low = (GDT_LIMIT & 0xFFFF),
         .access = access,
         .granularity = (struct gdt_granularity){
-          .g = GDT_4KBYTE_GRANULARITY,
-          .d = GDT_32BIT_OPERAND_SIZE,
-          .zero = 0,
-          .seglen = GDT_SEGMENT_LENGTH
+            .g = GDT_4KBYTE_GRANULARITY,
+            .d = GDT_32BIT_OPERAND_SIZE,
+            .zero = 0,
+            .seglen = GDT_SEGMENT_LENGTH
         }
     };
     return entry;
 }
+
+/* Constructs a null GDT entry. */
+static gdt_entry_t construct_null_entry() {
+    gdt_entry_t null_entry = (struct gdt_entry_struct){
+        .base_low = 0,
+        .base_middle = 0,
+        .base_high = 0,
+        .limit_low = 0,
+        .access = (struct gdt_access){
+            .p = 0,
+            .dpl = 0,
+            .dt = 0,
+            .type = 0
+        },
+        .granularity = (struct gdt_granularity){
+            .g = 0,
+            .d = 0,
+            .zero = 0,
+            .seglen = 0
+        }
+    };
+    return null_entry;
+}
+
 static void init_idt() {
   idt_ptr.limit = sizeof(idt_entry_t) * 256 - 1;
   idt_ptr.base = idt_entries;
@@ -157,8 +127,8 @@ static void init_idt() {
   memset(&idt_entries, 0, sizeof(idt_entry_t) * 256);
   idt_flags_t flags = {
     .reserved = IDT_FLAG_RESERVED,         // always 01110
-    .dpl = 0,               //ring 0
-    .p = 1                 //idt segment present
+    .dpl = 0,                              //ring 0
+    .p = 1                                //idt segment present
   };
   idt_set_gate(0, isr0, 0x08, flags);
   idt_set_gate(1, isr1, 0x08, flags);
