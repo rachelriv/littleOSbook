@@ -98,6 +98,22 @@ void *memmove(void *dst, const void *src, size_t len) {
   return dstmem;
 }
 
+void strupper(char *str){
+    int i;
+    int length = strlen(str);
+    for(i = 0; i < length; i++){
+        if(str[i] >= 'a' && str[i] < 'z') str[i] = str[i] & 0x4F;
+    }
+}
+
+void strlower(char *str){
+    int i;
+    int length = strlen(str);
+    for(i = 0; i < length; i++){
+        if(str[i] >= 'A' && str[i] < 'Z') str[i] = str[i] | 0x60;
+    }
+}
+
 #ifdef DEBUG
 static uint32_t line_count = 0;
 #endif
