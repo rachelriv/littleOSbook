@@ -1,9 +1,8 @@
-; load global descriptor tables
 global gdt_flush
 global idt_flush
 
 section .text
-gdt_flush:         
+gdt_flush:          ; from: http://www.jamesmolloy.co.uk/tutorial_html/4.-The%20GDT%20and%20IDT.html
   mov eax, [esp+4]  ; load eax with address of gdt_ptr_t
   lgdt [eax]
   mov ax, 0x10      ; 0x10 is the offset in the GDT to our data segment
@@ -16,7 +15,7 @@ gdt_flush:
 .flush:
   ret
 
-idt_flush:          
+idt_flush:          ; from: http://www.jamesmolloy.co.uk/tutorial_html/4.-The%20GDT%20and%20IDT.html
   mov eax, [esp+4]
   lidt [eax]
   ret

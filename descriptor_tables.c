@@ -1,26 +1,25 @@
 // Based (loosely) on code from Bran's kernel development tutorials.
 
+#include <stdbool.h>
+#include <cpuid.h>
+
 #include "descriptor_tables.h"
 #include "string.h"
+#include "io.h"
 
 // Internal use only
 extern void gdt_flush(uint32_t);
 extern void idt_flush(idt_ptr_t*);
 static gdt_entry_t construct_null_entry();
-static gdt_entry_t construct_entry();
+static gdt_entry_t construct_entry(gdt_access_t access);
 static void init_gdt();
 static void init_idt();
-static void gdt_set_gate(
-    int32_t idx,
-    uint32_t base,
-    uint32_t limit,
-    gdt_access_t access,
-    gdt_gran_t gran);
 static void idt_set_gate(
     uint8_t idx,
     void(*base),
     uint16_t selector,
     idt_flags_t flags);
+static void PIC_remap(uint8_t offset1, uint8_t offset2);
 
 gdt_entry_t gdt_entries[5];
 gdt_ptr_t   gdt_ptr;
@@ -42,34 +41,34 @@ static void init_gdt() {
     gdt_entry_t null_segment = construct_null_entry();
     gdt_entry_t kernel_mode_code_segment = construct_entry(
         (struct gdt_access){
-            .p    = GDT_SEGMENT_PRESENT,
-            .dpl  = GDT_RING0,
+            .type = GDT_CODE_TYPE_EXEC_READ,
             .dt   = GDT_CODE_AND_DATA_DESCRIPTOR,
-            .type = GDT_CODE_TYPE_EXEC_READ
+            .dpl  = GDT_RING0,
+            .p    = GDT_SEGMENT_PRESENT
         }
     );
     gdt_entry_t kernel_mode_data_segment = construct_entry(
         (struct gdt_access){
-            .p    = GDT_SEGMENT_PRESENT,
-            .dpl  = GDT_RING0,
+            .type = GDT_DATA_TYPE_READ_WRITE,
             .dt   = GDT_CODE_AND_DATA_DESCRIPTOR,
-            .type = GDT_DATA_TYPE_READ_WRITE
+            .dpl  = GDT_RING0,
+            .p    = GDT_SEGMENT_PRESENT
         }
     );
     gdt_entry_t user_mode_code_segment = construct_entry(
         (struct gdt_access){
-            .p    = GDT_SEGMENT_PRESENT,
-            .dpl  = GDT_RING3,
+            .type = GDT_CODE_TYPE_EXEC_READ,
             .dt   = GDT_CODE_AND_DATA_DESCRIPTOR,
-            .type = GDT_CODE_TYPE_EXEC_READ
+            .dpl  = GDT_RING3,
+            .p    = GDT_SEGMENT_PRESENT
         }
     );
     gdt_entry_t user_mode_data_segment = construct_entry(
         (struct gdt_access){
-            .p    = GDT_SEGMENT_PRESENT,
-            .dpl  = GDT_RING3,
+            .type = GDT_DATA_TYPE_READ_WRITE,
             .dt   = GDT_CODE_AND_DATA_DESCRIPTOR,
-            .type = GDT_DATA_TYPE_READ_WRITE
+            .dpl  = GDT_RING3,
+            .p    = GDT_SEGMENT_PRESENT
         }
     );
 
@@ -106,16 +105,53 @@ static gdt_entry_t construct_entry(gdt_access_t access) {
 /* Constructs a null GDT entry. */
 static gdt_entry_t construct_null_entry() {
     gdt_entry_t null_entry = (struct gdt_entry_struct){
-        0, 0, 0, 0,{0, 0, 0, 0},{0,0,0,0}
+        .base_low = 0,
+        .base_middle = 0,
+        .base_high = 0,
+        .limit_low = 0,
+        .access = (struct gdt_access){
+            .p = 0,
+            .dpl = 0,
+            .dt = 0,
+            .type = 0
+        },
+        .granularity = (struct gdt_granularity){
+            .g = 0,
+            .d = 0,
+            .zero = 0,
+            .seglen = 0
+        }
     };
     return null_entry;
 }
+static inline bool are_interrupts_enabled(){
+    unsigned long flags;
+    asm volatile ( "pushf\n\t"
+                   "pop %0"
+                   : "=g"(flags) );
+    return flags & (1 << 9);
+}
+
+const uint32_t CPUID_FLAG_MSR = 1 << 5;
+
+bool cpuHasMSR(){
+   uint32_t a, b, c, d; // eax, (ebx, ecx,) edx
+   __get_cpuid(1, &a, &b, &c, &d);
+   return d & CPUID_FLAG_MSR;
+}
+
+void cpuGetMSR(uint32_t msr, uint32_t *lo, uint32_t *hi){
+   asm volatile("rdmsr" : "=a"(*lo), "=d"(*hi) : "c"(msr));
+}
 
 static void init_idt() {
+  printf("cpuHasMSR=%i\n", cpuHasMSR());
+
   idt_ptr.limit = sizeof(idt_entry_t) * 256 - 1;
   idt_ptr.base = idt_entries;
 
   memset(&idt_entries, 0, sizeof(idt_entry_t) * 256);
+
   idt_flags_t flags = {
     .reserved = IDT_FLAG_RESERVED,         // always 01110
     .dpl = 0,                              //ring 0
@@ -154,9 +190,67 @@ static void init_idt() {
   idt_set_gate(30, isr30, 0x08, flags);
   idt_set_gate(31, isr31, 0x08, flags);
 
+  // Remap the irq table
+  printf("Remapping IRQs\n");
+  PIC_remap(0x20, 0x28);
+
+  idt_set_gate(32, irq0, 0x08, flags);
+  idt_set_gate(33, irq1, 0x08, flags);
+  idt_set_gate(34, irq2, 0x08, flags);
+  idt_set_gate(35, irq3, 0x08, flags);
+  idt_set_gate(36, irq4, 0x08, flags);
+  idt_set_gate(37, irq5, 0x08, flags);
+  idt_set_gate(38, irq6, 0x08, flags);
+  idt_set_gate(39, irq7, 0x08, flags);
+  idt_set_gate(40, irq8, 0x08, flags);
+  idt_set_gate(41, irq9, 0x08, flags);
+  idt_set_gate(42, irq10, 0x08, flags);
+  idt_set_gate(43, irq11, 0x08, flags);
+  idt_set_gate(44, irq12, 0x08, flags);
+  idt_set_gate(45, irq13, 0x08, flags);
+  idt_set_gate(46, irq14, 0x08, flags);
+  idt_set_gate(47, irq15, 0x08, flags);
+
   idt_flush(&idt_ptr);
+  // enable hardware interrupts
+  asm volatile ("sti");
+  if (are_interrupts_enabled()) printf("interrupts enabled.\n");
 }
 
+
+
+static inline void io_wait() {
+
+}
+
+// from http://wiki.osdev.org/8259_PIC
+static void PIC_remap(uint8_t offset1, uint8_t offset2) {
+  unsigned char a1, a2;
+
+  a1 = inb(PIC1_DATA);                        // save masks
+  a2 = inb(PIC2_DATA);
+
+  outb(PIC1_COMMAND, ICW1_INIT+ICW1_ICW4);  // starts the initialization sequence (in cascade mode)
+  io_wait();
+  outb(PIC2_COMMAND, ICW1_INIT+ICW1_ICW4);
+  io_wait();
+  outb(PIC1_DATA, offset1);                 // ICW2: Master PIC vector offset
+  io_wait();
+  outb(PIC2_DATA, offset2);                 // ICW2: Slave PIC vector offset
+  io_wait();
+  outb(PIC1_DATA, 4);                       // ICW3: tell Master PIC that there is a slave PIC at IRQ2 (0000 0100)
+  io_wait();
+  outb(PIC2_DATA, 2);                       // ICW3: tell Slave PIC its cascade identity (0000 0010)
+  io_wait();
+
+  outb(PIC1_DATA, ICW4_8086);
+  io_wait();
+  outb(PIC2_DATA, ICW4_8086);
+  io_wait();
+
+  outb(PIC1_DATA, a1);   // restore saved masks.
+  outb(PIC2_DATA, a2);
+}
 
 static void idt_set_gate(
   uint8_t idx,
