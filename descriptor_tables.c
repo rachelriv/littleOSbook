@@ -181,7 +181,7 @@ static void init_idt() {
 
   // Remap the irq table
   printf("Remapping IRQs\n");
-  PIC_remap(0x20, 0x28);
+  PIC_remap(PIC1_START_INTERRUPT, PIC2_START_INTERRUPT);
 
   idt_set_gate(32, irq0, 0x08, flags);
   idt_set_gate(33, irq1, 0x08, flags);
