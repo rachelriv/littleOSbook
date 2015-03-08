@@ -62,6 +62,8 @@
 #define PIC1_DATA       (PIC1+1)
 #define PIC2_COMMAND    PIC2
 #define PIC2_DATA       (PIC2+1)
+#define PIC1_START_INTERRUPT 0x20 /* Master PIC after remapping*/
+#define PIC2_START_INTERRUPT 0x28 /* Slave PIC after remapping*/
 
 #define PIC_EOI         0x20    /* End-of-interrupt command code */
 
