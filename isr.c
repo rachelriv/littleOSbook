@@ -18,7 +18,7 @@
 *  corresponds to each and every exception. We get the correct
 *  message by accessing like:
 *  exception_message[interrupt_number] */
-unsigned char *exception_messages[] = {
+char *exception_messages[] = {
     "Division By Zero",
     "Debug",
     "Non Maskable Interrupt",
@@ -78,10 +78,7 @@ void ack_irq(int int_no) {
 }
 
 // This gets called from our ASM interrupt handler stub.
-void irq_handler(registers_t regs)
-{
-  //printf("h/w interrupt: %i\n", regs.int_no);
-
+void irq_handler(registers_t regs){
   ack_irq(regs.int_no);
 
   if (interrupt_handlers[regs.int_no] != 0)
@@ -91,7 +88,6 @@ void irq_handler(registers_t regs)
   }
 }
 
-void register_interrupt_handler(uint8_t n, isr_t handler)
-{
+void register_interrupt_handler(uint8_t n, isr_t handler){
   interrupt_handlers[n] = handler;
 }
