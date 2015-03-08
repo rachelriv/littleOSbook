@@ -68,8 +68,7 @@ isr_t interrupt_handlers[256];
 void ack_irq(int int_no) {
   // Send an EOI (end of interrupt) signal to the PICs.
   // If this interrupt involved the slave.
-  if (int_no >= 40)
-  {
+  if (int_no >= 40){
      // Send reset signal to slave.
      outb(PIC2_COMMAND, PIC_EOI);
   }
@@ -81,8 +80,7 @@ void ack_irq(int int_no) {
 void irq_handler(registers_t regs){
   ack_irq(regs.int_no);
 
-  if (interrupt_handlers[regs.int_no] != 0)
-  {
+  if (interrupt_handlers[regs.int_no] != 0){
      isr_t handler = interrupt_handlers[regs.int_no];
      handler(regs);
   }

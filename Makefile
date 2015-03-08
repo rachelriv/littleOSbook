@@ -1,4 +1,4 @@
-OBJECTS =  multiboot.o interrupt.o serial.o framebuffer.o kmain.o loader.o \
+OBJECTS =  keyboard.o multiboot.o interrupt.o serial.o framebuffer.o kmain.o loader.o \
 	   io.o string.o descriptor_tables.o ldt.o isr.o\
                                          
 CC = gcc

@@ -132,20 +132,9 @@ static inline bool are_interrupts_enabled(){
     return flags & (1 << 9);
 }
 
-const uint32_t CPUID_FLAG_MSR = 1 << 5;
 
-bool cpuHasMSR(){
-   uint32_t a, b, c, d; // eax, (ebx, ecx,) edx
-   __get_cpuid(1, &a, &b, &c, &d);
-   return d & CPUID_FLAG_MSR;
-}
-
-void cpuGetMSR(uint32_t msr, uint32_t *lo, uint32_t *hi){
-   asm volatile("rdmsr" : "=a"(*lo), "=d"(*hi) : "c"(msr));
-}
 
 static void init_idt() {
-  printf("cpuHasMSR=%i\n", cpuHasMSR());
 
   idt_ptr.limit = sizeof(idt_entry_t) * 256 - 1;
   idt_ptr.base = idt_entries;

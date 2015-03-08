@@ -3,6 +3,7 @@
 #include "string.h"
 #include "multiboot.h"
 #include "descriptor_tables.h"
+#include "keyboard.h"
 
 void kmain(multiboot_info_t *info) {
   fb_clear();
@@ -18,6 +19,6 @@ void kmain(multiboot_info_t *info) {
   asm volatile ("int $0x3");
   asm volatile ("int $0x4");
 
-//  init_keyboard();
+   init_keyboard();
   return;
 }
