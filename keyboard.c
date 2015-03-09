@@ -8,6 +8,7 @@
 #define KBD_DATA_PORT 0x60
 
 int capsLock = 0;
+int shiftDown = 0;
 
 static void keyboard_cb(registers_t regs);
 int scancodes[]  = {
@@ -18,9 +19,9 @@ int scancodes[]  = {
   't', 'y', 'u', 'i', 'o', 'p', '[', ']', '\n',	/* Enter key */
     0,			/* 29   - Control */
   'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', ';',	/* 39 */
- '\'', '`',   0,		/* Left shift */
+ '\'', '`',   17,		/* Left shift: Device Control 1 */
  '\\', 'z', 'x', 'c', 'v', 'b', 'n',			/* 49 */
-  'm', ',', '.', '/',   0,				/* Right shift */
+  'm', ',', '.', '/',   17,				/* Right shift: Device Control 1 */
   '*',
     0,	/* Alt */
   ' ',	/* Space bar */
@@ -51,14 +52,39 @@ int scancodes[]  = {
 
 static void keyboard_cb(registers_t regs) {
   unsigned char scan_code = inb(KBD_DATA_PORT);
-  int c = scancodes[scan_code];
+  char c = scancodes[scan_code];
   if(scan_code & 0x80){
-      // TODO:
       // Key was just released.
-      if(c == 7){
+      if(scan_code == 0xBA){
+          // This toggles capsLock so that
+          // it's always 0 or 1.
           capsLock = 1 - capsLock;
+          printf("Toggling CAPSLOCK.");
+          return;
+      }else if(scan_code == 0xAA || scan_code == 0xB6){
+           shiftDown = 0;
+           printf("We released shift.");
       }
   }else{
+      if(c == 17) {
+          shiftDown = 1;
+          return;
+      }
+      if(c == 7) return;
+      /*
+       * An ASCII Latin lowercase letter and its
+       * uppercase counterpart differ in the 5th 
+       * bit. 
+       * Example: A = 01000001
+       *          a = 01100001
+       *
+       * To make uppercase, we simply AND a Latin letter
+       * with 0b1101111, or 0xDF. 
+       * To toggle the case, we can XOR the letter with
+       * 0b00100000, or 0x20, to toggle the 5th bit.
+       */
+      if(capsLock) c = c & 0xDF;
+      if(shiftDown) c = c ^ 0x20; 
       printf("%c", c);
   }
 }
