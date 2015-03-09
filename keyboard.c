@@ -95,14 +95,15 @@ int scancodes[]  = {
 static void keyboard_cb(registers_t regs) {
   unsigned char scan_code = inb(KBD_DATA_PORT);
   char c = scancodes[scan_code];
+//  printf("%x", scan_code);
   if(scan_code & 0x80){
       // Key was just released.
-      if(scan_code == 0xBA){
+/*      if(scan_code == 0xBA){
           // This toggles capsLock so that
           // it's always 0 or 1.
+          printf("CAPSLOCK");
           capsLock = 1 - capsLock;
-          return;
-      }else if(scan_code == 0xAA || scan_code == 0xB6){
+      }else*/if(scan_code == 0xAA || scan_code == 0xB6){
            shiftDown = 0;
       }
   }else{
@@ -110,7 +111,7 @@ static void keyboard_cb(registers_t regs) {
           shiftDown = 1;
           return;
       }
-      if(c == 7) return;
+      //if(c == 7) return;
       /*
        * An ASCII Latin lowercase letter and its
        * uppercase counterpart differ in the 5th 
@@ -124,7 +125,7 @@ static void keyboard_cb(registers_t regs) {
        * 0b00100000, or 0x20, to toggle the 5th bit.
        */
       if(isLatinLetter(c)){
-          if(capsLock) c = c & 0xDF;
+          //if(capsLock) c = c & 0xDF;
           if(shiftDown) c = c ^ 0x20;
       }else{
           if(shiftDown) c = scancodes[scan_code + 90];
