@@ -11,6 +11,12 @@ int capsLock = 0;
 int shiftDown = 0;
 
 static void keyboard_cb(registers_t regs);
+
+
+static int isLatinLetter(unsigned char c){
+    return (c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z');
+}
+
 int scancodes[]  = {
     0,  27, '1', '2', '3', '4', '5', '6', '7', '8',	/* 9 */
   '9', '0', '-', '=', '\b',	/* Backspace */
@@ -48,6 +54,42 @@ int scancodes[]  = {
     0,	/* F11 Key */
     0,	/* F12 Key */
     0,	/* All other keys are undefined */
+    0,  27, '!', '@', '#', '$', '%', '^', '&', '*',     /* 9 */
+  '(', ')', '_', '+', '\b',     /* Backspace */
+  '\t',                 /* Tab */
+  'Q', 'W', 'E', 'R',   /* 19 */
+  'T', 'Y', 'U', 'I', 'O', 'P', '{', '}', '\n', /* Enter key */
+    0,                  /* 29   - Control */
+  'A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', ':',     /* 39 */
+ '"', '~',   17,               /* Left shift: Device Control 1 */
+ '|', 'Z', 'X', 'C', 'V', 'B', 'N',                    /* 49 */
+  'M', '<', '>', '?',   17,                             /* Right shift: Device Control 1 */
+  '*',
+    0,  /* Alt */
+  ' ',  /* Space bar */
+    7,  /* Caps lock is a BELL in ASCII. We'll use this to toggle caps.*/
+    0,  /* 59 - F1 key ... > */
+    0,   0,   0,   0,   0,   0,   0,   0,
+    0,  /* < ... F10 */
+    0,  /* 69 - Num lock*/
+    0,  /* Scroll Lock */
+    0,  /* Home key */
+    0,  /* Up Arrow */
+    0,  /* Page Up */
+  '-',
+    0,  /* Left Arrow */
+    0,
+    0,  /* Right Arrow */
+  '+',
+    0,  /* 79 - End key*/
+    0,  /* Down Arrow */
+    0,  /* Page Down */
+    0,  /* Insert Key */
+    0,  /* Delete Key */
+    0,   0,   0,
+    0,  /* F11 Key */
+    0,  /* F12 Key */
+    0,  /* All other keys are undefined */
 };
 
 static void keyboard_cb(registers_t regs) {
@@ -59,11 +101,9 @@ static void keyboard_cb(registers_t regs) {
           // This toggles capsLock so that
           // it's always 0 or 1.
           capsLock = 1 - capsLock;
-          printf("Toggling CAPSLOCK.");
           return;
       }else if(scan_code == 0xAA || scan_code == 0xB6){
            shiftDown = 0;
-           printf("We released shift.");
       }
   }else{
       if(c == 17) {
@@ -83,8 +123,12 @@ static void keyboard_cb(registers_t regs) {
        * To toggle the case, we can XOR the letter with
        * 0b00100000, or 0x20, to toggle the 5th bit.
        */
-      if(capsLock) c = c & 0xDF;
-      if(shiftDown) c = c ^ 0x20; 
+      if(isLatinLetter(c)){
+          if(capsLock) c = c & 0xDF;
+          if(shiftDown) c = c ^ 0x20;
+      }else{
+          if(shiftDown) c = scancodes[scan_code + 90];
+      } 
       printf("%c", c);
   }
 }
