@@ -6,6 +6,9 @@
 #include "string.h"
 
 #define KBD_DATA_PORT 0x60
+
+int capsLock = 0;
+
 static void keyboard_cb(registers_t regs);
 int scancodes[]  = {
     0,  27, '1', '2', '3', '4', '5', '6', '7', '8',	/* 9 */
@@ -21,7 +24,7 @@ int scancodes[]  = {
   '*',
     0,	/* Alt */
   ' ',	/* Space bar */
-    0,	/* Caps lock */
+    7,	/* Caps lock is a BELL in ASCII. We'll use this to toggle caps.*/
     0,	/* 59 - F1 key ... > */
     0,   0,   0,   0,   0,   0,   0,   0,
     0,	/* < ... F10 */
@@ -49,7 +52,15 @@ int scancodes[]  = {
 static void keyboard_cb(registers_t regs) {
   unsigned char scan_code = inb(KBD_DATA_PORT);
   int c = scancodes[scan_code];
-  if(!(scan_code & 0x80)) printf("%c", c);
+  if(scan_code & 0x80){
+      // TODO:
+      // Key was just released.
+      if(c == 7){
+          capsLock = 1 - capsLock;
+      }
+  }else{
+      printf("%c", c);
+  }
 }
 
 void init_keyboard() {

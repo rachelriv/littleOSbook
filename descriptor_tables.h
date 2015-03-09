@@ -3,7 +3,7 @@
 #ifndef __DESCRIPTOR_TABLES_H__
 #define __DESCRIPTOR_TABLES_H__
 
-#include <inttypes.h>
+#include <stdint.h>
 
 
 //Reserved bits in IDT/GDT entries
