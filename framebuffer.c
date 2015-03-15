@@ -54,7 +54,8 @@ void fb_advance_pos() {
 }
 
 void fb_back_pos() {
-    if (fb_col == 0 && fb_row != 0){
+    if (fb_col == 0){
+        if(fb_row == 0) return;
         // We go up a row if we're in the first column
         // and not in the first row
         fb_col = FB_WIDTH - 1;
