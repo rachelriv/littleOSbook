@@ -51,6 +51,11 @@ void fb_write_cell(short i, char c, unsigned char fg, unsigned char bg);
 void fb_move_cursor(unsigned short pos);
 
 /**
+ * Moves cursor forwards or backwards a single cell
+ */
+void fb_advance_pos();
+void fb_back_pos();
+/**
  * Writes C string to framebuffer and advances cursor
  */
 void fb_write(char *buf, unsigned int len);

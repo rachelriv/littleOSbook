@@ -53,6 +53,19 @@ void fb_advance_pos() {
   fb_move_cursor(fb_col + (fb_row * FB_WIDTH));
 }
 
+void fb_back_pos() {
+    if (fb_col == 0 && fb_row != 0){
+        // We go up a row if we're in the first column
+        // and not in the first row
+        fb_col = FB_WIDTH - 1;
+        fb_row--;
+    } else {
+        //
+        fb_col--;
+    }
+    fb_move_cursor(fb_col + (fb_row * FB_WIDTH));
+}
+
 void fb_write(char *buf, unsigned int len) {
   unsigned int i;
   uint16_t pos;
