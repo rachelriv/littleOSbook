@@ -3,6 +3,15 @@
 
 #include <stdint.h>
 
+#define PAGE_FRAME_SIZE         4096
+#define PAGE_FRAME_WORD_SIZE    32
+#define PAGE_READ_ONLY          0
+#define PAGE_READ_WRITE         1
+#define PAGE_USER               0
+#define PAGE_SUPERVISOR         0
+#define PAGE_SIZE_4KB           0
+#define PAGE_SIZE_4MB           1
+
 struct directory {
   /* Format of a 32-bit page directory entry that references a 
    * page table
@@ -18,6 +27,7 @@ struct directory {
    *  PCD: Page-level cache disable (See Intel Manual 4.9)
    *  A: Accessed
    *  IGN: Ignored
+   *  PS: Page Size (0 = 4 KiB; 1 = 4 MiB) 
    *  ADDRESS: Physical address of 4KB aligned page table
                referenced by this entry
    */
