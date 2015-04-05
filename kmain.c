@@ -1,4 +1,4 @@
-#include <stdbool.h>
+#include <stdint.h>
 
 #include "descriptor_tables.h"
 #include "framebuffer.h"
@@ -8,35 +8,34 @@
 #include "string.h"
 #include "paging.h"
 #include "isr.h"
+#include "kheap.h"
 
-bool int3_happened = false;
-
-void int3_handler(registers_t regs) {
-  printf("interrupt 3 detected.");
-  int3_happened = true;
-}
 
 void kmain(multiboot_info_t *info) {
-  fb_clear();
-  printf("No. 5 is alive! \n");
+   // Initialise all the ISRs and segmentation
+   init_descriptor_tables();
+   // Initialise the screen (by clearing it)
+   fb_clear();
 
-  char greeting[] = "No. 5 is alive! \n";
-  serial_write(greeting, strlen(greeting));
+   uint32_t a = kmalloc(8);
+   init_paging();
+   printf("Hello, paging world!\n");
+   uint32_t b = kmalloc(8);
+   uint32_t c = kmalloc(8);
+   printf("a: ");
+   printf("%x", a);
+   printf(", b: ");
+   printf("%x", b);
+   printf("\nc: ");
+   printf("%x", c);
 
-  printf("multiboot header flags: %x \n", info->flags);
+   kfree(c);
+   kfree(b);
+   uint32_t d = kmalloc(12);
+   printf(", d: ");
+   printf("%x", d);
+//   uint32_t *ptr = (uint32_t *)0xA0000000;
+//   uint32_t do_page_fault = *ptr;
 
-  init_descriptor_tables();
-
-  printf("Generating random interrupts...\n");
-  register_interrupt_handler(3, int3_handler);
-  asm volatile ("int $0x3");
-  asm volatile ("int $0x4");
-  if (!int3_happened) printf("interrupts improperly configured, no point in continuing.");
-
-  init_keyboard();
-  init_paging();
-
-  uint32_t *ptr = (uint32_t*)0xA0000000;
-  uint32_t do_page_fault = *ptr;
-  return;
+   return;
 }

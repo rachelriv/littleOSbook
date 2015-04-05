@@ -30,4 +30,4 @@ SECTIONS {
 
 }
 
-kernel_end = .;
+end = .;
