@@ -5,6 +5,8 @@
 
 #define PAGE_FRAME_SIZE         4096
 #define PAGE_FRAME_WORD_SIZE    32
+#define PAGE_NOT_PRESENT        0
+#define PAGE_PRESENT            1 
 #define PAGE_READ_ONLY          0
 #define PAGE_READ_WRITE         1
 #define PAGE_USER               0

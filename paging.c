@@ -40,7 +40,26 @@ static void clear_frame(uint32_t addr) {
 }
 
 void handle_page_fault(registers_t regs) {
-  printf("Page fault!");
+  uint32_t faulting_address;
+  asm volatile("mov %%cr2, %0" : "=r" (faulting_address));
+  
+  // Error code lets us know what happened.   
+  int present = !(regs.err_code & 0x1); // Page not present
+  int rw = regs.err_code & 0x2;         // Write operation?
+  int us = regs.err_code & 0x4;         // Processor was in user-mode?
+  int reserved = regs.err_code & 0x8;   // Overwritten CPU-reserved bits
+  int id = regs.err_code & 0x10;        // Caused by an instruction fetch?
+  
+  // Output an error message.
+  printf("Page fault! ( ");
+  if (present) {printf("present ");}
+  if (rw) {printf("read-only ");}
+  if (us) {printf("user-mode ");}
+  if (reserved) {printf("reserved ");}
+  printf(") at 0x");
+  printf("%x", faulting_address);
+  printf("\n");
+  while(1);
 }
 
 
@@ -51,7 +70,7 @@ void map(directory_t *page_directory, uint32_t vaddr, uint32_t paddr) {
   directory_t *directory = &page_directory[directory_offset/4];
   page_t *table;
   if (!directory->present) {
-    directory->present = 1;
+    directory->present = PAGE_PRESENT;
     directory->rw = PAGE_READ_WRITE;
     directory->us = PAGE_SUPERVISOR;
     directory->ps = PAGE_SIZE_4KB;
@@ -79,14 +98,12 @@ extern void load_page_directory(directory_t *directory);
 extern void enable_paging();
 
 void init_paging() {
-  printf("initializing paging...");
+  printf("initializing paging");
 
   // listen for page faults
   register_interrupt_handler(14, handle_page_fault);
 
-  printf("boot_page_directory=%x", &boot_page_directory);
-
   load_page_directory(&boot_page_directory);
   enable_paging();
-  printf("paging enabled, good luck.");
+  printf("paging enabled!");
 }

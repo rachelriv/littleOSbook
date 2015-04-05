@@ -35,5 +35,8 @@ void kmain(multiboot_info_t *info) {
 
   init_keyboard();
   init_paging();
+
+  uint32_t *ptr = (uint32_t*)0xA0000000;
+  uint32_t do_page_fault = *ptr;
   return;
 }
