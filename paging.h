@@ -4,8 +4,8 @@
 #include <stdint.h>
 #include "isr.h"
 
-#define PAGE_FRAME_SIZE         4096
-#define PAGE_FRAME_WORD_SIZE    32
+#define FRAME_SIZE              4096
+
 #define PAGE_NOT_PRESENT        0
 #define PAGE_PRESENT            1 
 #define PAGE_READ_ONLY          0
@@ -77,9 +77,10 @@ typedef struct page_directory{
 void init_paging();
 
 /* Causes the specified page directory to be loaded 
- * into the CR3 register.
+ * into the CR3 register, where the MMU expects it.
+ * Enables paging and flushes the page-directory cache.
  */ 
-void switch_page_directory(page_directory_t *page);
+void enable_paging(page_directory_t *page);
 
 /* Retrieves a pointer to the page required.
  * If make == 1, if the page-table in which this page should
