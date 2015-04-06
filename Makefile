@@ -1,4 +1,4 @@
-OBJECTS =  keyboard.o multiboot.asm.o interrupt.asm.o serial.o framebuffer.o kmain.o loader.asm.o \
+OBJECTS =  error.o keyboard.o multiboot.asm.o interrupt.asm.o serial.o framebuffer.o kmain.o loader.asm.o \
 	   io.asm.o string.o descriptor_tables.o ldt.asm.o isr.o ordered_array.o kheap.o paging.o paging.asm.o\
                                          
 CC = gcc

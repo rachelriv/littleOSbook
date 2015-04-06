@@ -132,7 +132,7 @@ int printf(const char *format, ...) {
   char buf[20];
   int val;
   int32_t uval;
-  char c;
+  char c, *s;
   for (i=0; i<strlen(format); i++) {
     if (format[i] == '%') {
       i++;
@@ -149,9 +149,18 @@ int printf(const char *format, ...) {
           uitoa(uval, buf, 16);
           fb_write_str(buf);
           break;
+        case 'd':
+          uval = va_arg(ap, uint32_t);
+          uitoa(uval, buf, 10);
+          fb_write_str(buf);
+          break;
         case 'c':
           c = (char)va_arg(ap, int);
           fb_write(&c, 1);
+          break;
+        case 's':
+          s = va_arg(ap, char*);
+          fb_write_str(s);
           break;
         default:
           fb_write((char*)format+i, 1);

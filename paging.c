@@ -5,7 +5,7 @@
 #include "paging.h"
 #include "string.h"
 #include "kheap.h"
-
+#include "error.h"
 
 // defined in kheap.c
 extern uint32_t placement_address;
@@ -196,5 +196,5 @@ void page_fault(registers_t regs){
   if (regs.err_code & 0x4) { printf("user-mode"); }
   if (regs.err_code & 0x8) { printf("reserved"); }
   printf(") at 0x %x \n", faulting_address);
-  while(1);
+  ERROR("Page fault");
 }
