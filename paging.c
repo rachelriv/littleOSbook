@@ -62,6 +62,7 @@ static uint32_t first_free_frame() {
       } 
     }
   }
+  return num_of_sections*FRAME_ALLOCATIONS_SECTION_SIZE;
 }
 
 void alloc_frame(page_t *page, int is_supervisor, int is_writeable){
