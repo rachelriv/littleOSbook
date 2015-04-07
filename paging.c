@@ -54,7 +54,7 @@ static uint32_t first_free_frame() {
   uint32_t num_of_sections = num_of_frames/FRAME_ALLOCATIONS_SECTION_SIZE;
   int section, idx;
   for (section = 0; section < num_of_sections; section++){
-    if (frame_allocations[section] != USED_FRAME_ALLOCATIONS_SECTION) { 
+    if (frame_allocations[section] != USED_FRAME_ALLOCATIONS_SECTION) {
       for (idx = 0; idx < FRAME_ALLOCATIONS_SECTION_SIZE; idx++){
         if ( !(frame_allocations[section] & (0x1 << idx)) ){
           return (section*FRAME_ALLOCATIONS_SECTION_SIZE) + idx;
@@ -72,10 +72,9 @@ void alloc_frame(page_t *page, int is_supervisor, int is_writeable){
   } else {
     uint32_t free_frame = first_free_frame();
     if (free_frame == (uint32_t)-1){
-      printf("No free frames!");
-      //TODO: error out here
+      ERROR("No free frames!");
     } else {
-      // assign the page to the free frame
+      // assign the free frame to the page
       page->present = PAGE_PRESENT; 
       page->rw = (is_writeable)?PAGE_READ_WRITE:PAGE_READ_ONLY; 
       page->us = (is_supervisor)?PAGE_SUPERVISOR:PAGE_USER;
@@ -129,7 +128,7 @@ void init_paging() {
 
 void enable_paging(page_directory_t *dir) {
   current_directory = dir;
-  asm volatile("mov %0, %%cr3":: "r"(&dir->tablesPhysical));
+  asm volatile("mov %0, %%cr3":: "r"(&dir->page_tables_physical));
   uint32_t cr0; 
   asm volatile("mov %%cr0, %0": "=r"(cr0));
   cr0 |= 0x80000000; // Enable paging!
@@ -141,14 +140,14 @@ page_t *get_page(uint32_t address, int make, page_directory_t *dir){
   address /= 0x1000;
   // Find the page table containing the address
   uint32_t table_idx = address / 1024;
-  if (dir->tables[table_idx]) { // If this table is already assigned
-    return &dir->tables[table_idx]->pages[address%1024];
+  if (dir->page_tables_virtual[table_idx]) { // If this table is already assigned
+    return &dir->page_tables_virtual[table_idx]->pages[address%1024];
   } else if(make) {
     uint32_t tmp;
-    dir->tables[table_idx] = (page_table_t*)kmalloc_ap(sizeof(page_table_t), &tmp);
-    memset(dir->tables[table_idx], 0, 0x1000);
-    dir->tablesPhysical[table_idx] = tmp | 0x7; // PRESENT, RW, US.
-    return &dir->tables[table_idx]->pages[address%1024];
+    dir->page_tables_virtual[table_idx] = (page_table_t*)kmalloc_ap(sizeof(page_table_t), &tmp);
+    memset(dir->page_tables_virtual[table_idx], 0, 0x1000);
+    dir->page_tables_physical[table_idx] = tmp | 0x7; // PRESENT, RW, US.
+    return &dir->page_tables_virtual[table_idx]->pages[address%1024];
   } else {
     return 0;
   }
