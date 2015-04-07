@@ -19,6 +19,8 @@
 #define PAGE_SIZE_4KB           0
 #define PAGE_SIZE_4MB           1
 
+// Assume physical memory is 16 MB 
+#define SIZE_OF_PHYSICAL_MEMORY 0x10000000
 
 struct page {
   /* Format of a 32-bit page table entry that maps a 4 KB page
@@ -90,6 +92,14 @@ void enable_paging(page_directory_t *page);
  * reside isn't created, create it!
  */
 page_t *get_page(uint32_t address, int make, page_directory_t *dir);
+
+/* Indentity map (physical address = virtual address)
+ * from 0x0 to the end of used memory, so we can 
+ * access this transparently, as if paging wasn't enabled.
+ * Note: we allocate and extra frame so the heap
+ *       can be properly initialized.
+ */
+void identity_map();
 
 /*
  * Handler for page faults.

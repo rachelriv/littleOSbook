@@ -65,13 +65,13 @@ static uint32_t first_free_frame() {
   return num_of_sections*FRAME_ALLOCATIONS_SECTION_SIZE;
 }
 
-void alloc_frame(page_t *page, int is_supervisor, int is_writeable){
-  if (page->frame != 0){
+void alloc_frame(page_t *page, int is_supervisor, int is_writeable) {
+  if (page->frame != 0) {
     // frame already allocated, return right away
     return;
   } else {
     uint32_t free_frame = first_free_frame();
-    if (free_frame == (uint32_t)-1){
+    if (free_frame == (uint32_t)-1) {
       ERROR("No free frames!");
     } else {
       // assign the free frame to the page
@@ -101,29 +101,50 @@ void free_frame(page_t *page){
 }
 
 void init_paging() {
-  uint32_t mem_end_page = 0x10000000;
-  num_of_frames = mem_end_page / FRAME_SIZE;
-  int num_of_alloc_sections = num_of_frames / FRAME_ALLOCATIONS_SECTION_SIZE;
-  frame_allocations = (uint32_t*)kmalloc(num_of_alloc_sections);
-  memset(frame_allocations, 0, num_of_alloc_sections);
-  kernel_directory = (page_directory_t*)kmalloc_a(sizeof(page_directory_t));
-  memset(kernel_directory, 0, sizeof(page_directory_t));
-  current_directory = kernel_directory;
-  int i = 0;
-  for (i = KHEAP_START; i < KHEAP_START+KHEAP_INITIAL_SIZE; i += FRAME_SIZE) {
-    get_page(i, 1, kernel_directory);
-  }
-  i = 0;
-  while (i < placement_address+FRAME_SIZE) {
-    alloc_frame( get_page(i, 1, kernel_directory), 0, 0);
-    i += FRAME_SIZE;
-  }
-  for (i = KHEAP_START; i < KHEAP_START+KHEAP_INITIAL_SIZE; i += FRAME_SIZE){
-    alloc_frame( get_page(i, 1, kernel_directory), 0, 0);
-  }
+  // Some necessary set up
+  set_up_frame_allocations();
+  set_up_page_directory();
+  
+  map_heap_pages();
+  identity_map();
+  allocate_heap_pages();
+  
   register_interrupt_handler(14, page_fault);
   enable_paging(kernel_directory);
   kheap = create_heap(KHEAP_START, KHEAP_START+KHEAP_INITIAL_SIZE, 0xCFFFF000, 0, 0);
+}
+
+void allocate_heap_pages() {
+  uint32_t i;
+  for (i = KHEAP_START; i < KHEAP_START+KHEAP_INITIAL_SIZE; i += FRAME_SIZE){
+    alloc_frame( get_page(i, 1, kernel_directory), 0, 0);
+  }
+}
+
+void map_heap_pages() {
+  uint32_t i;
+  for (i = KHEAP_START; i < KHEAP_START+KHEAP_INITIAL_SIZE; i += FRAME_SIZE) {
+    get_page(i, 1, kernel_directory);
+  }
+}
+
+void set_up_frame_allocations() {
+  num_of_frames = SIZE_OF_PHYSICAL_MEMORY / FRAME_SIZE;
+  frame_allocations = (uint32_t*)kmalloc(num_of_frames/FRAME_ALLOCATIONS_SECTION_SIZE);
+  memset(frame_allocations, 0, num_of_frames/FRAME_ALLOCATIONS_SECTION_SIZE);
+}
+
+void set_up_page_directory() {
+  kernel_directory = (page_directory_t*)kmalloc_a(sizeof(page_directory_t));
+  memset(kernel_directory, 0, sizeof(page_directory_t));
+  current_directory = kernel_directory;
+}
+
+void identity_map() {
+  uint32_t i;
+  for (i = 0; i < placement_address+FRAME_SIZE; i+=FRAME_SIZE) { 
+    alloc_frame( get_page(i, 1, kernel_directory), 0, 0);
+  }  
 }
 
 void enable_paging(page_directory_t *dir) {
