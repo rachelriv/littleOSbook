@@ -10,6 +10,8 @@
 // Internal use only
 extern void gdt_flush(uint32_t);
 extern void idt_flush(idt_ptr_t*);
+extern void tss_flush();
+
 static gdt_entry_t construct_null_entry();
 static gdt_entry_t construct_entry(gdt_access_t access);
 static void init_gdt();
@@ -20,6 +22,7 @@ static void idt_set_gate(
     uint16_t selector,
     idt_flags_t flags);
 static void PIC_remap(uint8_t offset1, uint8_t offset2);
+static void write_tss(s32int, u16int, u32int);
 
 gdt_entry_t gdt_entries[5];
 gdt_ptr_t   gdt_ptr;
@@ -27,6 +30,7 @@ gdt_ptr_t   gdt_ptr;
 idt_entry_t idt_entries[256]; // 256 possible interrupt numbers
 idt_ptr_t   idt_ptr;
 
+tess_entry_t tss_entry;
 
 // Initializes GDT and IDT.
 void init_descriptor_tables(){
@@ -35,7 +39,7 @@ void init_descriptor_tables(){
 }
 
 static void init_gdt() {
-    gdt_ptr.limit = (sizeof(gdt_entry_t) * 5) - 1;
+    gdt_ptr.limit = (sizeof(gdt_entry_t) * 6) - 1;
     gdt_ptr.base  = (uint32_t)&gdt_entries;
 
     gdt_entry_t null_segment = construct_null_entry();
@@ -72,15 +76,34 @@ static void init_gdt() {
         }
     );
 
+    gdt_entry_t task_state_segment = construct_entry(
+        (struct gdt_access){
+            .type = ,
+            .dt   = ,
+            .dpl  = ,
+            .p    =
+        }
+    );
+
     gdt_entries[0] = null_segment;
     gdt_entries[1] = kernel_mode_code_segment;
     gdt_entries[2] = kernel_mode_data_segment;
     gdt_entries[3] = user_mode_code_segment;
     gdt_entries[4] = user_mode_data_segment;
+    //gdt_entries[5] = task_state_segment;
+    write_tss(5, 0x10, 0x0);
 
     gdt_flush((uint32_t)&gdt_ptr);
+    tss_flush();
 }
 
+// Initialize the task state segment struct
+static void write_tss(s32int num, u16int ss0, u32int esp0) {
+    u32int base = (u32int) &tss_entry;
+    u32int limit = base + sizeof(tss_entry);
+
+    
+}
 /** The only thing that changes between the non-null GDT
  *  segment descriptors is the access. Given the access,
  *  this returns the corresponding GDT entry.
@@ -97,6 +120,23 @@ static gdt_entry_t construct_entry(gdt_access_t access) {
             .d = GDT_OPERAND_SIZE_32,
             .zero = 0,
             .seglen = GDT_SEGMENT_LENGTH
+        }
+    };
+    return entry;
+}
+
+static gdt_entry_t construct_tss_entry() {
+    gdt_entry_t entry = (struct gdt_entry_struct){
+        .base_low  = GDT_BASE & 0xFFFF,
+        .base_middle = (GDT_BASE >> 16) & 0xFF,
+        .base_high = (GDT_BASE >> 24) & 0xFF,
+        .limit_low = (GDT_LIMIT & 0xFFFF),
+        .access = access,
+        .granularity = (struct gdt_granularity){
+            .g = GDT_GRANULARITY_1K,
+            .d = GDT_OPERAND_SIZE_16,
+            .zero = 0,
+            .seglen = 0
         }
     };
     return entry;
