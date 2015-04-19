@@ -24,13 +24,13 @@ static void idt_set_gate(
 static void PIC_remap(uint8_t offset1, uint8_t offset2);
 static void write_tss(s32int, u16int, u32int);
 
-gdt_entry_t gdt_entries[5];
+gdt_entry_t gdt_entries[6];
 gdt_ptr_t   gdt_ptr;
 
 idt_entry_t idt_entries[256]; // 256 possible interrupt numbers
 idt_ptr_t   idt_ptr;
 
-tess_entry_t tss_entry;
+tss_entry_t tss_entry;
 
 // Initializes GDT and IDT.
 void init_descriptor_tables(){
@@ -76,12 +76,12 @@ static void init_gdt() {
         }
     );
 
-    gdt_entry_t task_state_segment = construct_entry(
+    gdt_entry_t task_state_segment = construct_tss_entry(
         (struct gdt_access){
-            .type = ,
-            .dt   = ,
-            .dpl  = ,
-            .p    =
+            .type = GDT_CODE_TYPE_EXEC_ONLY_ACCESSED,
+            .dt   = GDT_SYSTEM_DESCRIPTOR,
+            .dpl  = GDT_RING3,
+            .p    = GDT_SEGMENT_PRESENT
         }
     );
 
@@ -90,20 +90,38 @@ static void init_gdt() {
     gdt_entries[2] = kernel_mode_data_segment;
     gdt_entries[3] = user_mode_code_segment;
     gdt_entries[4] = user_mode_data_segment;
-    //gdt_entries[5] = task_state_segment;
-    write_tss(5, 0x10, 0x0);
+    gdt_entries[5] = task_state_segment;
+    
+    write_tss(0x10, 0x0);
 
     gdt_flush((uint32_t)&gdt_ptr);
     tss_flush();
 }
 
 // Initialize the task state segment struct
-static void write_tss(s32int num, u16int ss0, u32int esp0) {
-    u32int base = (u32int) &tss_entry;
-    u32int limit = base + sizeof(tss_entry);
+static void write_tss(u16int ss0, u32int esp0) {
+    // Ensure the descriptor is initially zero.
+   memset(&tss_entry, 0, sizeof(tss_entry));
 
-    
+   tss_entry.ss0  = ss0;  // Set the kernel stack segment.
+   tss_entry.esp0 = esp0; // Set the kernel stack pointer.
+
+   // Here we set the cs, ss, ds, es, fs and gs entries in the TSS. These specify what
+   // segments should be loaded when the processor switches to kernel mode. Therefore
+   // they are just our normal kernel code/data segments - 0x08 and 0x10 respectively,
+   // but with the last two bits set, making 0x0b and 0x13. The setting of these bits
+   // sets the RPL (requested privilege level) to 3, meaning that this TSS can be used
+   // to switch to kernel mode from ring 3.
+   tss_entry.cs   = 0x0b;
+   tss_entry.ss = tss_entry.ds = tss_entry.es = tss_entry.fs = tss_entry.gs = 0x13;
 }
+
+// When we change tasks, the TSS entry updates so it has the address
+// of the correct kernel stack.
+void set_kernel_stack(u32int stack) {
+    tss_entry.esp0 = stack;
+}
+
 /** The only thing that changes between the non-null GDT
  *  segment descriptors is the access. Given the access,
  *  this returns the corresponding GDT entry.
@@ -125,12 +143,16 @@ static gdt_entry_t construct_entry(gdt_access_t access) {
     return entry;
 }
 
-static gdt_entry_t construct_tss_entry() {
+/* Constructor for Task State Segment. */
+static gdt_entry_t construct_tss_entry(gdt_access_t access) {
+    u32int base = (u32int) &tss_entry;
+    u32int limit = base + sizeof(tss_entry);
+
     gdt_entry_t entry = (struct gdt_entry_struct){
-        .base_low  = GDT_BASE & 0xFFFF,
-        .base_middle = (GDT_BASE >> 16) & 0xFF,
-        .base_high = (GDT_BASE >> 24) & 0xFF,
-        .limit_low = (GDT_LIMIT & 0xFFFF),
+        .base_low  = base & 0xFFFF,
+        .base_middle = (base >> 16) & 0xFF,
+        .base_high = (base >> 24) & 0xFF,
+        .limit_low = (limit & 0xFFFF),
         .access = access,
         .granularity = (struct gdt_granularity){
             .g = GDT_GRANULARITY_1K,
