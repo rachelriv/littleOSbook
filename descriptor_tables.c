@@ -14,6 +14,8 @@ extern void tss_flush();
 
 static gdt_entry_t construct_null_entry();
 static gdt_entry_t construct_entry(gdt_access_t access);
+static gdt_entry_t construct_tss_entry(gdt_access_t access);
+
 static void init_gdt();
 static void init_idt();
 static void idt_set_gate(
@@ -22,7 +24,7 @@ static void idt_set_gate(
     uint16_t selector,
     idt_flags_t flags);
 static void PIC_remap(uint8_t offset1, uint8_t offset2);
-static void write_tss(s32int, u16int, u32int);
+static void write_tss(uint16_t, uint32_t);
 
 gdt_entry_t gdt_entries[6];
 gdt_ptr_t   gdt_ptr;
@@ -99,7 +101,7 @@ static void init_gdt() {
 }
 
 // Initialize the task state segment struct
-static void write_tss(u16int ss0, u32int esp0) {
+static void write_tss(uint16_t ss0, uint32_t esp0) {
     // Ensure the descriptor is initially zero.
    memset(&tss_entry, 0, sizeof(tss_entry));
 
@@ -118,7 +120,7 @@ static void write_tss(u16int ss0, u32int esp0) {
 
 // When we change tasks, the TSS entry updates so it has the address
 // of the correct kernel stack.
-void set_kernel_stack(u32int stack) {
+void set_kernel_stack(uint32_t stack) {
     tss_entry.esp0 = stack;
 }
 
@@ -145,8 +147,8 @@ static gdt_entry_t construct_entry(gdt_access_t access) {
 
 /* Constructor for Task State Segment. */
 static gdt_entry_t construct_tss_entry(gdt_access_t access) {
-    u32int base = (u32int) &tss_entry;
-    u32int limit = base + sizeof(tss_entry);
+    uint32_t base = (uint32_t) &tss_entry;
+    uint32_t limit = base + sizeof(tss_entry);
 
     gdt_entry_t entry = (struct gdt_entry_struct){
         .base_low  = base & 0xFFFF,

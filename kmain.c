@@ -9,6 +9,7 @@
 #include "paging.h"
 #include "isr.h"
 #include "kheap.h"
+#include "syscall.h"
 
 
 void kmain(multiboot_info_t *info) {
@@ -36,6 +37,10 @@ void kmain(multiboot_info_t *info) {
    printf("%x", d);
 //   uint32_t *ptr = (uint32_t *)0xA0000000;
 //   uint32_t do_page_fault = *ptr;
+
+   initialise_syscalls();
+   switch_to_user_mode();
+   syscall_fb_clear();
 
    return;
 }

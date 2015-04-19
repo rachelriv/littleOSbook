@@ -1,6 +1,7 @@
 OBJECTS =  error.o keyboard.o multiboot.asm.o interrupt.asm.o serial.o framebuffer.o kmain.o loader.asm.o \
-	   io.asm.o string.o descriptor_tables.o ldt.asm.o isr.o ordered_array.o kheap.o paging.o\
-                                         
+	   io.asm.o string.o descriptor_tables.o ldt.asm.o isr.o ordered_array.o kheap.o paging.o \
+           syscall.o task.o\
+                                        
 CC = gcc
 CFLAGS = -m32 -fno-stack-protector \
 					-ffreestanding \
