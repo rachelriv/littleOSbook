@@ -1,5 +1,6 @@
 global gdt_flush
 global idt_flush
+global tss_flush
 
 section .text
 gdt_flush:          ; from: http://www.jamesmolloy.co.uk/tutorial_html/4.-The%20GDT%20and%20IDT.html
@@ -19,3 +20,9 @@ idt_flush:          ; from: http://www.jamesmolloy.co.uk/tutorial_html/4.-The%20
   mov eax, [esp+4]
   lidt [eax]
   ret
+
+tss_flush:         ; From tutorial http://www.jamesmolloy.co.uk/tutorial_html/10.-User%20Mode.html
+  mov ax, 0x2B     ; Load the index of the TSS. Since the index is 0x28 but the last two bits
+                   ; must be set, we have 0x28 | 0x3 = 0x2B.
+  ltr ax           ; Load 0x2B into the task state register
+  ret 
