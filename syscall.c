@@ -2,8 +2,8 @@
 #include "isr.h"
 #include "framebuffer.h"
 
-DECL_SYSCALL1(fb_write_str, char *buf);
-DECL_SYSCALL0(fb_clear);
+DEFN_SYSCALL0(fb_clear,0);
+DEFN_SYSCALL1(fb_write_str, 1, char *buf);
 
 static void syscall_handler(registers_t *regs);
 

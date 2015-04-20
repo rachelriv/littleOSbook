@@ -10,9 +10,10 @@
 #include "isr.h"
 #include "kheap.h"
 #include "syscall.h"
+#include "task.h"
 
-
-void kmain(multiboot_info_t *info) {
+void kmain(multiboot_info_t *info, uint32_t initial_stack) {
+   initial_esp = initial_stack;
    // Initialise all the ISRs and segmentation
    init_descriptor_tables();
    // Initialise the screen (by clearing it)
@@ -38,9 +39,9 @@ void kmain(multiboot_info_t *info) {
 //   uint32_t *ptr = (uint32_t *)0xA0000000;
 //   uint32_t do_page_fault = *ptr;
 
-   initialise_syscalls();
+   //initialise_syscalls();
    switch_to_user_mode();
-   syscall_fb_clear();
+   //syscall_fb_clear();
 
    return;
 }

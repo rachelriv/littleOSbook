@@ -73,6 +73,8 @@ typedef struct page_directory{
    * location, for loading into the CR3 register.
    */
   uint32_t page_tables_physical[PAGE_DIRECTORY_SIZE];
+  // The actual physical address of the page directory.
+  uint32_t physicalAddress;
 
 } page_directory_t;
 
@@ -105,4 +107,9 @@ void identity_map();
  * Handler for page faults.
  */
 void page_fault(registers_t regs);
+
+/*
+ * Clones a directory for multitasking.
+ */
+page_directory_t * clone_directory(page_directory_t *src);
 #endif

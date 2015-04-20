@@ -112,6 +112,8 @@ void init_paging() {
   register_interrupt_handler(14, page_fault);
   enable_paging(kernel_directory);
   kheap = create_heap(KHEAP_START, KHEAP_START+KHEAP_INITIAL_SIZE, 0xCFFFF000, 0, 0);
+  current_directory = clone_directory(kernel_directory);
+  switch_page_directory(current_directory);
 }
 
 void allocate_heap_pages() {
@@ -135,9 +137,10 @@ void set_up_frame_allocations() {
 }
 
 void set_up_page_directory() {
+  uint32_t phys;
   kernel_directory = (page_directory_t*)kmalloc_a(sizeof(page_directory_t));
   memset(kernel_directory, 0, sizeof(page_directory_t));
-  current_directory = kernel_directory;
+  kernel_directory->physicalAddress = (uint32_t)kernel_directory->page_tables_physical;
 }
 
 void identity_map() {
@@ -149,7 +152,7 @@ void identity_map() {
 
 void enable_paging(page_directory_t *dir) {
   current_directory = dir;
-  asm volatile("mov %0, %%cr3":: "r"(&dir->page_tables_physical));
+  asm volatile("mov %0, %%cr3":: "r"(dir->physicalAddress));
   uint32_t cr0; 
   asm volatile("mov %%cr0, %0": "=r"(cr0));
   cr0 |= 0x80000000; // Enable paging!
@@ -188,4 +191,67 @@ void page_fault(registers_t regs){
   if (regs.err_code & 0x8) { printf("reserved"); }
   printf(") at 0x %x \n", faulting_address);
   ERROR("Page fault");
+}
+
+
+static page_table_t * clone_table(page_table_t *src, uint32_t *physAddress) {
+    //Make a brand new, blank, empty, page-aligned table. 
+    page_table_t * table = (page_table_t*)kmalloc_ap(sizeof(page_table_t), physAddress);
+    memset(table, 0, sizeof(page_directory_t));
+
+    int i;
+    for(i = 0; i < 1024; i++) {
+        if(!src->page_tables_virtual[i].frame){
+            continue;
+        }
+        // Create a new frame and copy all flags. All of them.
+        alloc_frame(&table->page_tables_virtual[i], 0, 0);
+        if(src->page_tables_virtual[i].present) table->page_tables_virtual[i].present = 1;
+        if(src->page_tables_virtual[i].rw) table->page_tables_virtual[i].rw = 1;
+        if(src->page_tables_virtual[i].us) table->page_tables_virtual[i].us = 1;
+        if(src->page_tables_virtual[i].pwt) table->page_tables_virtual[i].pwt = 1;
+        if(src->page_tables_virtual[i].pcd) table->page_tables_virtual[i].pcd = 1;
+        if(src->page_tables_virtual[i].a) table->page_tables_virtual[i].a = 1;
+        if(src->page_tables_virtual[i].d) table->page_tables_virtual[i].d = 1;
+        if(src->page_tables_virtual[i].pat) table->page_tables_virtual[i].pat = 1;
+        if(src->page_tables_virtual[i].g) table->page_tables_virtual[i].g = 1;
+        // This will physically copy the data.
+        copy_page_physical(src->page_tables_virtual[i].frame*0x1000, table->page_tables_virtual[i].frame*0x1000);
+    }
+    return table;
+}
+
+
+page_directory_t * clone_directory(page_directory_t *src) {
+    uint32_t phys;
+    // We create a new page directory and get its physical address.
+    page_directory_t * dir = (page_directory_t*)kmalloc_ap(sizeof(page_directory_t), &phys);
+    // We blank out the directory's content.
+    memset(dir, 0, sizeof(page_directory_t));
+
+    // Get the offset of tables
+    uint32_t offset = (uint32_t)dir->page_tables_physical - (uint32_t)dir;
+    //
+    dir->page_tables_physical = phys + offset;
+
+    int i;
+    for(i = 0; i < 1024; i++ ) {
+        if(!scr->tables[i]) {
+            continue;      
+        }
+
+        if (kernel_directory->tables[i] == src->tables[i]) {
+            // The page table is in the kernel directory, so we link.
+            dir->page_tables_virtual[i] = src->page_tables_virtual[i];
+            dir->page_tables_physical[i] = src->page_physical_tables[i];
+        } else {
+            // The page table is not in the kernel directory, we we
+            // will copy the page table.
+            uint32_t phys;
+            dir->page_tables_virtual[i] = clone_table(src->tables[i], &phys);
+            dir->page_tables_physical[i] = phys | 0x07; // Present, RW, User-Mode
+        }
+    }
+
+    return dir;
 }
