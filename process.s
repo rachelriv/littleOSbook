@@ -1,4 +1,10 @@
 global copy_page_physical
+global read_eip
+
+read_eip:
+    pop eax                ; Get the return address
+    jmp eax                ; Return using jmp since ret would pop
+                           ; return address
 
 copy_page_physical:
     push ebx               ; We protect the contents of EBX
