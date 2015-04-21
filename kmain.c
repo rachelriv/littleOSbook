@@ -22,6 +22,12 @@ void kmain(multiboot_info_t *info, uint32_t initial_stack) {
    uint32_t a = kmalloc(8);
    init_paging();
    printf("Hello, paging world!\n");
+
+   initialise_tasking();
+
+   int ret = fork();
+   printf("fork() returned");
+   printf("\n===========================================\n");
    uint32_t b = kmalloc(8);
    uint32_t c = kmalloc(8);
    printf("a: ");

@@ -41,7 +41,51 @@ void switch_task() {
      uint32_t esp, ebp, eip;
      asm volatile("mov %%esp, %0" : "=r" (esp));
      asm volatile("mov %%ebp, %0" : "=r" (ebp));
+     /* We read the instruction pointer.
+      * When this function exits, one of two things can happen
+      * a) We just called the function and it returned the EIP as requested
+      * b) We have just switched tasks and it will seems as if read_eip
+      *    has just returned, since the saved EIP is the instruction right
+      *    after the read_eip() function call.
+      * If we are in case b), we need to return immediatel. We use a dummy 
+      * value in EAX to detect this. When C returns values in EAX, it will 
+      * seem as if the return calue is the dummy value 0x12345.
+      */
+      eip = read_eip();
+
+      if (eip == 0x12345){
+          // Return if we just switched tasks.
+          return; 
+      }
+      // Else, we save register values and switch.
+      current_task->eip = eip;
+      current_task->esp = esp;
+      current_task->ebp = ebp;
+
+      current_task = current_task->next;
+      // If we fell of the end of the list, go to the beginning.
+      if (!current_task) {
+          current_task = ready_queue;
+      }
+
+      eip = current_task->eip;
+      esp = current_task->esp;
+      ebp = current_task->ebp;
+      
+      // Make sure the memory manager knows we've changed
+      // page directory
+      current_directory = current_task->page_directory;
+      asm volatile("          \
+         cli;                 \
+         mov %0, %%ecx;       \
+         mov %1, %%esp;       \
+         mov %2, %%ebp;       \
+         mov $0x12345, %%eax; \
+         sti;
+         jmp *%%ecx           "
+      : : "r"(eip), "r"(esp), "r"(ebp), "r"(current_directory->physicalAddress));
 }
+
 // This will clone the current existing process/task
 int fork() {
     // Disable the interrupts
