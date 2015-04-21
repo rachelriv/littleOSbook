@@ -201,28 +201,28 @@ static page_table_t * clone_table(page_table_t *src, uint32_t *physAddress) {
 
     int i;
     for(i = 0; i < 1024; i++) {
-        if(!src->page_tables_virtual[i].frame){
+        if(!src->pages[i].frame){
             continue;
         }
         // Create a new frame and copy all flags. All of them.
-        alloc_frame(&table->page_tables_virtual[i], 0, 0);
-        if(src->page_tables_virtual[i].present) table->page_tables_virtual[i].present = 1;
-        if(src->page_tables_virtual[i].rw) table->page_tables_virtual[i].rw = 1;
-        if(src->page_tables_virtual[i].us) table->page_tables_virtual[i].us = 1;
-        if(src->page_tables_virtual[i].pwt) table->page_tables_virtual[i].pwt = 1;
-        if(src->page_tables_virtual[i].pcd) table->page_tables_virtual[i].pcd = 1;
-        if(src->page_tables_virtual[i].a) table->page_tables_virtual[i].a = 1;
-        if(src->page_tables_virtual[i].d) table->page_tables_virtual[i].d = 1;
-        if(src->page_tables_virtual[i].pat) table->page_tables_virtual[i].pat = 1;
-        if(src->page_tables_virtual[i].g) table->page_tables_virtual[i].g = 1;
+        alloc_frame(&table->pages[i], 0, 0);
+        if(src->pages[i].present) table->pages[i].present = 1;
+        if(src->pages[i].rw) table->pages[i].rw = 1;
+        if(src->pages[i].us) table->pages[i].us = 1;
+        if(src->pages[i].pwt) table->pages[i].pwt = 1;
+        if(src->pages[i].pcd) table->pages[i].pcd = 1;
+        if(src->pages[i].a) table->pages[i].a = 1;
+        if(src->pages[i].d) table->pages[i].d = 1;
+        if(src->pages[i].pat) table->pages[i].pat = 1;
+        if(src->pages[i].g) table->pages[i].g = 1;
         // This will physically copy the data.
-        copy_page_physical(src->page_tables_virtual[i].frame*0x1000, table->page_tables_virtual[i].frame*0x1000);
+        copy_page_physical(src->pages[i].frame*0x1000, table->pages[i].frame*0x1000);
     }
     return table;
 }
 
 
-page_directory_t * clone_directory(page_directory_t *src) {
+page_directory_t * clone_directory(page_directory_t * src) {
     uint32_t phys;
     // We create a new page directory and get its physical address.
     page_directory_t * dir = (page_directory_t*)kmalloc_ap(sizeof(page_directory_t), &phys);
@@ -232,23 +232,23 @@ page_directory_t * clone_directory(page_directory_t *src) {
     // Get the offset of tables
     uint32_t offset = (uint32_t)dir->page_tables_physical - (uint32_t)dir;
     //
-    dir->page_tables_physical = phys + offset;
+    dir->physicalAddress = phys + offset;
 
     int i;
     for(i = 0; i < 1024; i++ ) {
-        if(!scr->tables[i]) {
+        if(!src->page_tables_virtual[i]) {
             continue;      
         }
 
-        if (kernel_directory->tables[i] == src->tables[i]) {
+        if (kernel_directory->page_tables_virtual[i] == src->page_tables_virtual[i]) {
             // The page table is in the kernel directory, so we link.
             dir->page_tables_virtual[i] = src->page_tables_virtual[i];
-            dir->page_tables_physical[i] = src->page_physical_tables[i];
+            dir->page_tables_physical[i] = src->page_tables_virtual[i];
         } else {
             // The page table is not in the kernel directory, we we
             // will copy the page table.
             uint32_t phys;
-            dir->page_tables_virtual[i] = clone_table(src->tables[i], &phys);
+            dir->page_tables_virtual[i] = clone_table(src->page_tables_virtual[i], &phys);
             dir->page_tables_physical[i] = phys | 0x07; // Present, RW, User-Mode
         }
     }

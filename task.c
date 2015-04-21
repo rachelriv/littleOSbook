@@ -75,14 +75,14 @@ void switch_task() {
       // Make sure the memory manager knows we've changed
       // page directory
       current_directory = current_task->page_directory;
-      asm volatile("          \
-         cli;                 \
-         mov %0, %%ecx;       \
-         mov %1, %%esp;       \
-         mov %2, %%ebp;       \
-         mov $0x12345, %%eax; \
-         sti;
-         jmp *%%ecx           "
+      asm volatile(" "
+         "cli;"                 
+         "mov %0, %%ecx;"       
+         "mov %1, %%esp;"       
+         "mov %2, %%ebp;"       
+         "mov $0x12345, %%eax;" 
+         "sti;"
+         "jmp *%%ecx"
       : : "r"(eip), "r"(esp), "r"(ebp), "r"(current_directory->physicalAddress));
 }
 
@@ -169,7 +169,7 @@ void switch_to_user_mode() {
 
 void move_stack(void *new_stack_start, uint32_t size) {
     uint32_t i;
-    uint32_t max = ((u32int)new_stack_start-size);
+    uint32_t max = ((uint32_t)new_stack_start-size);
     // Allocate space for new stack.
     for(i = (uint32_t)new_stack_start; i >= max; i -= 0x1000) {
         alloc_frame( get_page(i, 1, current_directory), 0, 1); // In user mode and is writeable.
@@ -193,9 +193,9 @@ void move_stack(void *new_stack_start, uint32_t size) {
     // Trace through the original stack and copy new values into the new stack
     for(i = (uint32_t)new_stack_start; i > (uint32_t)new_stack_start-size; i -= 4) {
         uint32_t tmp = * (uint32_t *)i;
-        if ((old_stack_ptr < tmp) && (tmp < initial_bsp)) {
+        if ((old_stack_ptr < tmp) && (tmp < initial_esp)) {
             tmp += offset;
-            uint32_t *tmp2 = (u32int*)i;
+            uint32_t *tmp2 = (uint32_t*)i;
             *tmp2 = tmp;
         }
     }

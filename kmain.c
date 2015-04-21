@@ -12,6 +12,8 @@
 #include "syscall.h"
 #include "task.h"
 
+uint32_t initial_esp;
+
 void kmain(multiboot_info_t *info, uint32_t initial_stack) {
    initial_esp = initial_stack;
    // Initialise all the ISRs and segmentation
