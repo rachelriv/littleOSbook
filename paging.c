@@ -116,6 +116,15 @@ void init_paging() {
   switch_page_directory(current_directory);
 }
 
+void switch_page_directory(page_directory_t * dir) {
+    current_directory = dir;
+    asm volatile("mov %0, %%cr3" : : "r"(dir->physicalAddress));
+    uint32_t cr0;
+    asm volatile("mov %%cr0, %0": "=r"(cr0));
+    cr0 |= 0x80000000;
+    asm volatile("mov %0, %%cr0":: "r"(cr0));
+}
+
 void allocate_heap_pages() {
   uint32_t i;
   for (i = KHEAP_START; i < KHEAP_START+KHEAP_INITIAL_SIZE; i += FRAME_SIZE){
