@@ -39,9 +39,7 @@ void ack_irq(int int_no) {
 }
 
 // This gets called from our ASM interrupt handler stub.
-void irq_handler(registers_t regs)
-{
-  //debug("h/w interrupt: %i\n", regs.int_no);
+void irq_handler(registers_t regs) {
 
   ack_irq(regs.int_no);
 
@@ -51,7 +49,6 @@ void irq_handler(registers_t regs)
   }
 }
 
-void register_interrupt_handler(uint8_t n, isr_t handler)
-{
+void register_interrupt_handler(uint8_t n, isr_t handler) {
   interrupt_handlers[n] = handler;
 }

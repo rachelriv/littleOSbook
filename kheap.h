@@ -1,5 +1,3 @@
-// Based (loosely) on code from Bran's kernel development tutorials.
-
 #ifndef KHEAP_H
 #define KHEAP_H
 #include "stdint.h"

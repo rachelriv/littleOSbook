@@ -15,11 +15,11 @@ void map_heap_pages();
 void set_up_frame_allocations();
 void set_up_page_directory();
 void allocate_heap_pages();
-/* bitset of frames - used or free. 
- *  each entry of the frame allocations 
- *  bitset represents a section of 32 frame 
- *  allocations (since each entry is a uint32_t 
- *  integer and each of the 32 bits of the int 
+/* bitset of frames - used or free.
+ *  each entry of the frame allocations
+ *  bitset represents a section of 32 frame
+ *  allocations (since each entry is a uint32_t
+ *  integer and each of the 32 bits of the int
  *  represents the allocation-0=free,1=used-
  *  of a frame) */
 uint32_t *frame_allocations;
@@ -27,7 +27,7 @@ uint32_t *frame_allocations;
 #define USED_FRAME_ALLOCATIONS_SECTION 0xFFFFFFFF
 #define FREE_FRAME_ALLOCATIONS_SECTION 0x00000000
 
-// Number of physical frames 
+// Number of physical frames
 uint32_t num_of_frames;
 
 // The kernel's page directory
@@ -63,7 +63,7 @@ static uint32_t first_free_frame() {
         if ( !(frame_allocations[section] & (0x1 << idx)) ){
           return (section*FRAME_ALLOCATIONS_SECTION_SIZE) + idx;
         }
-      } 
+      }
     }
   }
   return num_of_sections*FRAME_ALLOCATIONS_SECTION_SIZE;
@@ -79,11 +79,11 @@ void alloc_frame(page_t *page, int is_supervisor, int is_writeable) {
       ERROR("No free frames!");
     } else {
       // assign the free frame to the page
-      page->present = PAGE_PRESENT; 
-      page->rw = (is_writeable)?PAGE_READ_WRITE:PAGE_READ_ONLY; 
+      page->present = PAGE_PRESENT;
+      page->rw = (is_writeable)?PAGE_READ_WRITE:PAGE_READ_ONLY;
       page->us = (is_supervisor)?PAGE_SUPERVISOR:PAGE_USER;
       page->frame = free_frame;
-      
+
       // mark newly allocated frame as used
       // in our frame allocations
       uint32_t physical_address = free_frame*FRAME_SIZE;
@@ -95,7 +95,7 @@ void alloc_frame(page_t *page, int is_supervisor, int is_writeable) {
 void free_frame(page_t *page){
   uint32_t frame;
   if ( !(frame=page->frame) ){
-    // The page didn't have an allocated 
+    // The page didn't have an allocated
     // frame in the first place
     return;
   } else {
@@ -108,11 +108,11 @@ void init_paging() {
   // Some necessary set up
   set_up_frame_allocations();
   set_up_page_directory();
-  
+
   map_heap_pages();
   identity_map();
   allocate_heap_pages();
-  
+
   register_interrupt_handler(14, page_fault);
   enable_paging(kernel_directory);
   kheap = create_heap(KHEAP_START, KHEAP_START+KHEAP_INITIAL_SIZE, 0xCFFFF000, 0, 0);
@@ -146,15 +146,15 @@ void set_up_page_directory() {
 
 void identity_map() {
   uint32_t i;
-  for (i = 0; i < placement_address+FRAME_SIZE; i+=FRAME_SIZE) { 
+  for (i = 0; i < placement_address+FRAME_SIZE; i+=FRAME_SIZE) {
     alloc_frame( get_page(i, 1, kernel_directory), 0, 0);
-  }  
+  }
 }
 
 void enable_paging(page_directory_t *dir) {
   current_directory = dir;
   asm volatile("mov %0, %%cr3":: "r"(&dir->page_tables_physical));
-  uint32_t cr0; 
+  uint32_t cr0;
   asm volatile("mov %%cr0, %0": "=r"(cr0));
   cr0 |= 0x80000000; // Enable paging!
   asm volatile("mov %0, %%cr0":: "r"(cr0));
@@ -177,7 +177,7 @@ page_t *get_page(uint32_t address, int make, page_directory_t *dir){
     return 0;
   }
 }
- 
+
 void page_fault(registers_t regs){
   // A page fault has occurred.
   // The faulting address is stored in the CR2 register.
