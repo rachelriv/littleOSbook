@@ -101,6 +101,9 @@ page_t *get_page(uint32_t address, int make, page_directory_t *dir);
  */
 void identity_map();
 
+void free_frame(page_t *page);
+
+void alloc_frame(page_t *page, int is_supervisor, int is_writeable);
 /*
  * Handler for page faults.
  */

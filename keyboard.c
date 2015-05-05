@@ -10,12 +10,7 @@
 int capsLock = 0;
 int shiftDown = 0;
 
-static void keyboard_cb(registers_t regs);
-
-
-static int isLatinLetter(unsigned char c){
-    return (c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z');
-}
+static void keyboard_cb();
 
 int scancodes[]  = {
     0,  27, '1', '2', '3', '4', '5', '6', '7', '8',	/* 9 */
@@ -92,7 +87,7 @@ int scancodes[]  = {
     0,  /* All other keys are undefined */
 };
 
-static void keyboard_cb(registers_t regs) {
+static void keyboard_cb() {
   unsigned char scan_code = inb(KBD_DATA_PORT);
   unsigned char c = scancodes[scan_code];
   if(scan_code & 0x80){

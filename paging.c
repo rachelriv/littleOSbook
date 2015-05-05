@@ -11,6 +11,10 @@
 extern uint32_t placement_address;
 extern heap_t *kheap;
 
+void map_heap_pages();
+void set_up_frame_allocations();
+void set_up_page_directory();
+void allocate_heap_pages();
 /* bitset of frames - used or free. 
  *  each entry of the frame allocations 
  *  bitset represents a section of 32 frame 
@@ -52,7 +56,7 @@ static void clear_frame(uint32_t addr) {
 
 static uint32_t first_free_frame() {
   uint32_t num_of_sections = num_of_frames/FRAME_ALLOCATIONS_SECTION_SIZE;
-  int section, idx;
+  uint32_t section, idx;
   for (section = 0; section < num_of_sections; section++){
     if (frame_allocations[section] != USED_FRAME_ALLOCATIONS_SECTION) {
       for (idx = 0; idx < FRAME_ALLOCATIONS_SECTION_SIZE; idx++){

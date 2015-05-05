@@ -20,7 +20,7 @@ uint32_t kmalloc_int(uint32_t sz, int align, uint32_t *phys)
         if (phys != 0)
         {
             page_t *page = get_page((uint32_t)addr, 0, kernel_directory);
-            *phys = page->frame*0x1000 + (uint32_t)addr&0xFFF;
+            *phys = page->frame*0x1000 + ((uint32_t)addr&0xFFF);
         }
         return (uint32_t)addr;
     }
@@ -72,7 +72,7 @@ static void expand(uint32_t new_size, heap_t *heap)
     // Sanity check.
 
     // Get the nearest following page boundary.
-    if (new_size&0xFFFFF000 != 0)
+    if ((new_size&0xFFFFF000) != 0)
     {
         new_size &= 0xFFFFF000;
         new_size += 0x1000;
@@ -133,7 +133,7 @@ static uint32_t find_smallest_hole(uint32_t size, uint8_t page_align, heap_t *he
             // Page-align the starting point of this header.
             uint32_t location = (uint32_t)header;
             uint32_t offset = 0;
-            if ((location+sizeof(header_t)) & 0xFFFFF000 != 0)
+            if (((location+sizeof(header_t)) & 0xFFFFF000) != 0)
                 offset = 0x1000 /* page size */  - (location+sizeof(header_t))%0x1000;
             uint32_t hole_size = (uint32_t)header->size - offset;
             // Can we fit now?
@@ -169,7 +169,7 @@ heap_t *create_heap(uint32_t start, uint32_t end_addr, uint32_t max, uint8_t sup
     start += sizeof(type_t)*HEAP_INDEX_SIZE;
 
     // Make sure the start address is page-aligned.
-    if (start & 0xFFFFF000 != 0)
+    if ((start & 0xFFFFF000) != 0)
     {
         start &= 0xFFFFF000;
         start += 0x1000;
@@ -199,7 +199,7 @@ void *alloc(uint32_t size, uint8_t page_align, heap_t *heap)
     // Find the smallest hole that will fit.
     uint32_t iterator = find_smallest_hole(new_size, page_align, heap);
 
-    if (iterator == -1) // If we didn't find a suitable hole
+    if ((int32_t)iterator == -1) // If we didn't find a suitable hole
     {
         // Save some previous data.
         uint32_t old_length = heap->end_address - heap->start_address;
@@ -225,7 +225,7 @@ void *alloc(uint32_t size, uint8_t page_align, heap_t *heap)
         }
 
         // If we didn't find ANY headers, we need to add one.
-        if (idx == -1)
+        if ((int32_t)idx == -1)
         {
             header_t *header = (header_t *)old_end_address;
             header->magic = HEAP_MAGIC;

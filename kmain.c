@@ -11,7 +11,7 @@
 #include "kheap.h"
 
 
-void kmain(multiboot_info_t *info) {
+void kmain(/*multiboot_info_t *info*/) {
    // Initialise all the ISRs and segmentation
    init_descriptor_tables();
    // Initialise the screen (by clearing it)
@@ -29,8 +29,8 @@ void kmain(multiboot_info_t *info) {
    printf("\nc: ");
    printf("%x", c);
 
-   kfree(c);
-   kfree(b);
+   kfree((void *)c);
+   kfree((void *)b);
    uint32_t d = kmalloc(12);
    printf(", d: ");
    printf("%x", d);
