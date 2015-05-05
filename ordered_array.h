@@ -1,5 +1,4 @@
-// ordered_array.h -- Interface for creating, inserting and deleting
-//                    from ordered arrays.
+// Based (loosely) on code from Bran's kernel development tutorials.
 
 #ifndef ORDERED_ARRAY_H
 #define ORDERED_ARRAY_H
@@ -11,7 +10,7 @@
 **/
 typedef void* type_t;
 /**
-   A predicate should return nonzero if the first argument is less than the second. Else 
+   A predicate should return nonzero if the first argument is less than the second. Else
    it should return zero.
 **/
 typedef uint8_t (*lessthan_predicate_t)(type_t,type_t);

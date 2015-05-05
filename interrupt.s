@@ -1,4 +1,3 @@
-; from http://www.jamesmolloy.co.uk/tutorial_html/4.-The%20GDT%20and%20IDT.html
 extern isr_handler
 extern irq_handler
 
