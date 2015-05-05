@@ -180,7 +180,6 @@ static void init_idt() {
   idt_set_gate(31, isr31, 0x08, flags);
 
   // Remap the irq table
-  printf("Remapping IRQs\n");
   PIC_remap(PIC1_START_INTERRUPT, PIC2_START_INTERRUPT);
 
   idt_set_gate(32, irq0, 0x08, flags);
@@ -203,7 +202,6 @@ static void init_idt() {
   idt_flush(&idt_ptr);
   // enable hardware interrupts
   asm volatile ("sti");
-  if (are_interrupts_enabled()) printf("interrupts enabled.\n");
 }
 
 
